@@ -1,7 +1,18 @@
 ---
 import "@/styles/global.css";
+import SiteFooter from "@/components/sections/SiteFooter.astro";
 import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
-import { contactUrl, homeDescription, homePath, pageTitle, siteName, siteRole } from "@/lib/site";
+import { serializeJsonLd } from "@/lib/seo";
+import {
+  contactId,
+  homeDescription,
+  homePath,
+  ogImageAlt,
+  ogImagePath,
+  pageTitle,
+  siteName,
+  siteRole,
+} from "@/lib/site";
 import { defaultTheme, defaultThemeForScheme, themes, themeStorageKey } from "@/styles/themes/index";
 
 interface Props {
@@ -12,6 +23,11 @@ interface Props {
   ogType?: "website" | "article";
   /** Keeps the page out of search results (the lab). */
   noindex?: boolean;
+  /** The link preview (path under public/, 1200x630); the home card when not given. */
+  image?: string;
+  imageAlt?: string;
+  /** schema.org data for search engines, written as JSON-LD. */
+  jsonLd?: Record<string, unknown>;
 }
 
 const {
@@ -19,10 +35,14 @@ const {
   description = homeDescription,
   ogType = "website",
   noindex = false,
+  image = ogImagePath,
+  imageAlt = ogImageAlt,
+  jsonLd,
 } = Astro.props;
 
 const themeIds = themes.map((theme) => theme.id);
 const canonical = noindex || !Astro.site ? undefined : new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = Astro.site ? new URL(image, Astro.site).href : undefined;
 const current = Astro.url.pathname === homePath ? "page" : undefined;
 ---
 
@@ -40,9 +60,17 @@ const current = Astro.url.pathname === homePath ? "page" : undefined;
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={siteName} />
     {canonical && <meta property="og:url" content={canonical} />}
-    <meta name="twitter:card" content="summary" />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
+    {ogImage && <meta property="og:image:alt" content={imageAlt} />}
+    <meta name="twitter:card" content="summary_large_image" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
-    <link rel="icon" href="data:," />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    {jsonLd && <script type="application/ld+json" is:inline set:html={serializeJsonLd(jsonLd)} />}
     <script
       is:inline
       define:vars={{ themeIds, storageKey: themeStorageKey, bySystemScheme: defaultThemeForScheme }}
@@ -69,8 +97,9 @@ const current = Astro.url.pathname === homePath ? "page" : undefined;
     <header class="topbar sticky top-0 z-10 border-b border-line bg-bg">
       <div class="mx-auto flex h-full w-full max-w-page items-center justify-between gap-4 px-gutter">
         <a href={homePath} class="flex min-w-0 flex-col text-ink no-underline">
-          <span class="font-medium">{siteName}</span>
-          <span class="text-small text-muted">{siteRole}</span>
+          <span class="font-medium whitespace-nowrap">{siteName}</span>
+          <!-- On phones the role would wrap the sticky bar to four lines; the hero and footer carry it there. -->
+          <span class="text-small text-muted max-sm:hidden">{siteRole}</span>
         </a>
         <nav aria-label="Site" class="flex items-center gap-3 sm:gap-5">
           <a
@@ -80,18 +109,20 @@ const current = Astro.url.pathname === homePath ? "page" : undefined;
           >
             All projects
           </a>
+          <a
+            href={`#${contactId}`}
+            class="text-small whitespace-nowrap text-muted no-underline hover:text-ink"
+          >
+            Contact
+          </a>
           <ThemeSwitch />
-          {contactUrl && (
-            <a href={contactUrl} class="text-small text-muted no-underline hover:text-ink">
-              Contact
-            </a>
-          )}
         </nav>
       </div>
     </header>
     <main class="relative mx-auto w-full max-w-page px-gutter">
       <slot />
     </main>
+    <SiteFooter />
   </body>
 </html>
 

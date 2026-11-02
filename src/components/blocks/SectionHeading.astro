@@ -27,9 +27,10 @@ const { id, title, class: className } = Astro.props;
 </script>
 
 <style>
-  /* The anchor shows on hover and focus; on touch screens, which have no hover, it is always visible. */
+  /* The anchor shows on hover and focus; on touch screens, which have no hover, it stays visible but dimmed. */
   .section-anchor {
     --anchor-gap: var(--space-2);
+    --anchor-touch-opacity: 0.35;
     margin-inline-start: var(--anchor-gap);
     opacity: 0;
     transition: opacity var(--dur-fast) var(--ease-out);
@@ -42,7 +43,7 @@ const { id, title, class: className } = Astro.props;
 
   @media (hover: none) {
     .section-anchor {
-      opacity: 1;
+      opacity: var(--anchor-touch-opacity);
     }
   }
 </style>

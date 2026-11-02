@@ -9,10 +9,10 @@ export interface FilterOption {
 
 const filterLabels: Record<FilterKey, string> = {
   all: "All",
-  backend: "Backend & AI agents",
+  backend: "Backend and AI",
   frontend: "Frontend",
   mobile: "Mobile",
-  fullstack: "Fullstack",
+  fullstack: "Full stack",
 };
 
 const filterOrder: readonly FilterKey[] = ["all", "backend", "frontend", "mobile", "fullstack"];

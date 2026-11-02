@@ -11,17 +11,21 @@ src/
     load.ts         loadProjects(): the collection as plain objects, checked against the node registry
   content.config.ts the Zod schema of the projects collection (source of truth for fields)
   lib/              pure TypeScript, unit-tested: types, node registry, grouping, filters, connections,
-                    diagram layout maths, text wrapping, site constants, fixtures for tests and /lab
+                    diagram layout maths, text wrapping, list folding, SEO data (JSON-LD, sitemap),
+                    site constants and contacts, fixtures for tests and /lab
   components/
     ui/             primitives: Button, Badge, Chip, Link, ThemeSwitch
     blocks/         ProjectRow, GlanceStrip, SectionHeading, ScreenFrame, SequenceDiagram, PipelineDiagram,
-                    DiagramCanvas, DiagramSteps, ShowcaseStrip, CodeBlock, ToolList, DecisionLog, RuleList
+                    DiagramCanvas, DiagramSteps, ShowcaseStrip, CodeBlock, ToolList, Fold, DecisionLog, RuleList,
+                    ContactLinks
     sections/       ProjectList, ProjectHeader, ProjectOverview, ProjectArchitecture, ProjectShowcase, ProjectStructure,
-                    ProjectTools, ProjectDecisions, ProjectRules, ProjectConnections: composed from blocks
-  layouts/          BaseLayout (head, meta, top bar, theme bootstrap), ProjectLayout (contents column, sections)
-  pages/            index (all projects), [slug] (one project), _lab (dev only)
+                    ProjectTools, ProjectDecisions, ProjectRules, ProjectConnections, SiteFooter: composed from blocks
+  layouts/          BaseLayout (head, meta, JSON-LD, top bar, footer, theme bootstrap), ProjectLayout (contents column, sections)
+  pages/            index (all projects), [slug] (one project), 404, sitemap.xml, _lab (dev only)
   scripts/          client-side behaviour: filters, diagram, reveal, anchors, theme, lab
   styles/           tokens, themes, tailwind.css, fonts.css, diagram.css (see DESIGN.md)
+public/             favicon.ico, app icons, site.webmanifest, robots.txt, og.jpg (home link preview),
+                    og/<slug>.jpg (one link preview per project)
 ```
 
 ## Layers
@@ -76,8 +80,12 @@ The full system map, a graph of every node and connection, is a later step. For 
 
 ## Pages
 
-- `/`: all projects, grouped by company, with discipline filters written to the URL (`?f=backend`) by `scripts/filters.ts`. Without scripting everything is shown and the chips stay hidden.
+- `/`: a hero with the name, role and contacts, then all projects, grouped by company, with discipline filters written to the URL (`?f=backend`) by `scripts/filters.ts`. Without scripting everything is shown and the chips stay hidden.
 - `/[slug]`: one page per project from `ProjectLayout`, at a short root URL meant to be shared on its own (`/auth-service/`). Sections run Overview, Architecture, Showcase, Code structure, Tools, Decision log, Rules and agents, Connected projects; the optional ones appear only when the project has the field, and the contents column follows. A sticky contents column sits on the left from 900px up; prose is 68ch and diagrams use the full content width. The bottom of the page links back to all projects and on to the next one.
+- `/404`: GitHub Pages serves it for any unknown path; kept out of search results.
+- `/sitemap.xml`: the home page and every project page, built from the collection.
+- Every page has a footer with the contacts (`#contact`, linked from the top bar). The head carries Open Graph tags with a 1200x630 preview: `og.jpg` on the home page, `og/<slug>.jpg` on a project page. The home page adds schema.org `Person` JSON-LD and each project page a `TechArticle` written by that person (`lib/seo.ts`).
+- The icons and previews in `public/` are compressed images made from the developer's originals, which stay in `research/images/` with the scripts that render them. A changed project title or summary means rendering its preview again.
 - `/lab`: every token and component in every state, a theme switcher and live token inputs, built from invented data in `lib/fixtures.ts`. Never linked. The file is `src/pages/_lab.astro` (the underscore keeps the router from building it) and a small integration in `astro.config.mjs` injects the `/lab` route only under `astro dev`, so a build contains neither the page nor its script.
 
 Page-to-page navigation uses native cross-document view transitions (`@view-transition { navigation: auto; }` in `styles/global.css`, off under `prefers-reduced-motion`): the project title carries a `view-transition-name` in the row and in the header, so it morphs from one to the other. There is no client-side router.

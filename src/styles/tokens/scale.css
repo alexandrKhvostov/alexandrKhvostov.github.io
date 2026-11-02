@@ -76,7 +76,7 @@
   --dur-fast: 150ms;
   --dur-base: 220ms;
   --dur-enter: 500ms;
-  --stagger: 70ms;
+  --stagger: 40ms;
   --dur-signal: 2400ms;
   --dur-ambient: 9000ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);

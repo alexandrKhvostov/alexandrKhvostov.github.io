@@ -9,8 +9,8 @@ export interface Theme {
 
 /** Every theme file in this folder, in switcher order. A new theme = one CSS file + one entry here. */
 export const themes: readonly Theme[] = [
-  { id: "signal-dark", label: "Signal dark", scheme: "dark" },
-  { id: "signal-light", label: "Signal light", scheme: "light" },
+  { id: "signal-dark", label: "Dark", scheme: "dark" },
+  { id: "signal-light", label: "Light", scheme: "light" },
 ];
 
 export const defaultThemeForScheme: Record<"light" | "dark", ThemeId> = {

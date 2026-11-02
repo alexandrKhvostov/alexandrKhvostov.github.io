@@ -11,7 +11,8 @@ import ProjectTools from "@/components/sections/ProjectTools.astro";
 import Button from "@/components/ui/Button.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import type { ConnectionView } from "@/lib/connections";
-import { homePath, pageTitle, projectPath } from "@/lib/site";
+import { projectJsonLd } from "@/lib/seo";
+import { homePath, pageTitle, projectOgImagePath, projectPath } from "@/lib/site";
 import type { Project } from "@/lib/types";
 
 interface Props {
@@ -24,6 +25,18 @@ interface Props {
 
 const { project, next, outgoing, incoming } = Astro.props;
 const hasConnections = outgoing.length + incoming.length > 0;
+const image = projectOgImagePath(project.slug);
+const article = Astro.site
+  ? projectJsonLd(
+      {
+        title: project.title,
+        summary: project.summary,
+        url: new URL(projectPath(project.slug), Astro.site).href,
+        image: new URL(image, Astro.site).href,
+      },
+      Astro.site.href,
+    )
+  : undefined;
 
 const contents = [
   { id: "overview", label: "Overview" },
@@ -37,7 +50,14 @@ const contents = [
 ];
 ---
 
-<BaseLayout title={pageTitle(project.title)} description={project.summary} ogType="article">
+<BaseLayout
+  title={pageTitle(project.title)}
+  description={project.summary}
+  ogType="article"
+  image={image}
+  imageAlt={`${project.title}: ${project.summary}`}
+  jsonLd={article}
+>
   <div class="project-layout pt-7 pb-section">
     <nav aria-label="Contents" class="project-toc" data-contents>
       <p class="mb-3 text-small text-muted">On this page</p>

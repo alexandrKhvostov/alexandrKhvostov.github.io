@@ -51,7 +51,7 @@ test("filterOptions has All first, the agreed labels and only disciplines that e
   );
   assert.deepEqual(
     options.map((option) => option.label),
-    ["All", "Backend & AI agents", "Frontend", "Mobile", "Fullstack"],
+    ["All", "Backend and AI", "Frontend", "Mobile", "Full stack"],
   );
   const onlyBackend = filterOptions([{ disciplines: ["backend"], aiAgents: false }]);
   assert.deepEqual(

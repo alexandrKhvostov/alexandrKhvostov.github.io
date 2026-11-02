@@ -1,0 +1,24 @@
+---
+import Button from "@/components/ui/Button.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { homePath, pageTitle } from "@/lib/site";
+---
+
+<BaseLayout title={pageTitle("Page not found")} description="This page does not exist." noindex>
+  <div class="flex flex-col items-start gap-5 pt-7 pb-section">
+    <p data-enter style="--i: 0" class="font-mono text-mono text-muted">
+      404
+    </p>
+    <h1 data-enter style="--i: 1" class="text-h1">
+      Page not found
+    </h1>
+    <p data-enter style="--i: 2" class="max-w-prose text-lead text-muted">
+      The link may be old or mistyped. Every project is on the projects page.
+    </p>
+    <div data-enter style="--i: 3">
+      <Button href={homePath} variant="primary">
+        All projects
+      </Button>
+    </div>
+  </div>
+</BaseLayout>

@@ -13,7 +13,7 @@ export const disciplineLabels: Record<Discipline, string> = {
   backend: "Backend",
   frontend: "Frontend",
   mobile: "Mobile",
-  fullstack: "Fullstack",
+  fullstack: "Full stack",
 };
 
 export const decisionKindLabels: Record<DecisionKind, string> = {
