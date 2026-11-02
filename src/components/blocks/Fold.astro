@@ -1,0 +1,34 @@
+---
+interface Props {
+  /** Plural noun for the label: "tools", "notes". No count: one row can list two tools ("a / b"). */
+  noun: string;
+}
+
+const { noun } = Astro.props;
+---
+
+<!-- Native details: works without scripts, and find-in-page opens it to show a match. -->
+<details class="fold flex flex-col gap-3">
+  <summary class="fold-summary w-fit cursor-pointer list-none rounded-sm border border-line-strong px-4 py-2 text-small font-medium text-ink transition-colors duration-fast ease-out hover:bg-surface-2">
+    <span class="fold-closed">Show all {noun}</span>
+    <span class="fold-open">Show fewer {noun}</span>
+  </summary>
+  <div class="flex flex-col gap-5 pt-3">
+    <slot />
+  </div>
+</details>
+
+<style>
+  .fold-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fold-open,
+  .fold[open] .fold-closed {
+    display: none;
+  }
+
+  .fold[open] .fold-open {
+    display: inline;
+  }
+</style>
