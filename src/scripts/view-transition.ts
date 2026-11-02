@@ -3,6 +3,8 @@
  * While one runs, <html data-vt="<kind>"> lets global.css time that kind on its own. Where the API is
  * missing, or the visitor asks for reduced motion, the update simply runs.
  */
+import { cssTimeToMs } from "@/lib/motion";
+
 const root = document.documentElement;
 
 export function runViewTransition(kind: string, update: () => void): ViewTransition | undefined {
@@ -18,9 +20,9 @@ export function runViewTransition(kind: string, update: () => void): ViewTransit
   return transition;
 }
 
-/** A motion token from :root, in milliseconds (`--dur-theme: 450ms` → 450). */
+/** A motion token from :root, in milliseconds (`--dur-theme: 450ms` → 450, also after minifying to `.45s`). */
 export function durationToken(name: string): number {
-  return Number.parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0;
+  return cssTimeToMs(getComputedStyle(root).getPropertyValue(name));
 }
 
 export function easingToken(name: string): string {
