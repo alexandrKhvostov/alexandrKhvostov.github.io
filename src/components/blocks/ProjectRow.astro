@@ -33,26 +33,70 @@ const { project, ...rest } = Astro.props;
   </div>
   <p class="max-w-prose text-small text-muted">{project.summary}</p>
   <p class="text-small text-muted">{project.role}</p>
-  <ul class="mt-1 flex flex-wrap gap-2" aria-label="Disciplines">
-    {project.disciplines.map((discipline) => (
-      <li>
-        <Chip variant="discipline">{disciplineLabels[discipline]}</Chip>
-      </li>
-    ))}
-    {project.aiAgents && (
-      <li>
-        <Chip variant="ai">{aiAgentsLabel}</Chip>
-      </li>
-    )}
-  </ul>
+  <div class="mt-1 flex items-center justify-between gap-3">
+    <ul class="flex flex-wrap gap-2" aria-label="Disciplines">
+      {project.disciplines.map((discipline) => (
+        <li>
+          <Chip variant="discipline">{disciplineLabels[discipline]}</Chip>
+        </li>
+      ))}
+      {project.aiAgents && (
+        <li>
+          <Chip variant="ai">{aiAgentsLabel}</Chip>
+        </li>
+      )}
+    </ul>
+    <!-- Says "this opens" where there is no hover to say it; the link's own name is the title. -->
+    <span aria-hidden="true" class="row-arrow text-h3 leading-none text-muted">
+      →
+    </span>
+  </div>
 </li>
+
+<script>
+  // iOS Safari applies :active only on pages that listen for touchstart; the row's press state needs it.
+  document.addEventListener("touchstart", () => {}, { passive: true });
+</script>
 
 <style>
   /* Hover or keyboard focus lights the row's border: a ring from --signal to --signal-2 lies over the
      hairline, its bright point runs once around the row (--dur-trace) and it stays lit with a soft glow.
      The mask keeps only the 1px border box of the ring. */
   .project-row {
-    transition: box-shadow var(--dur-base) var(--ease-out);
+    /* A wide row: a full --press-scale would move its far edge too much. */
+    --press-scale: 0.99;
+    transition:
+      box-shadow var(--dur-base) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  .row-arrow {
+    transition:
+      color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  /* A press, on touch above all: the row sinks a little, the ring flashes on at once and the arrow
+     moves toward where the tap leads, before the next page loads. */
+  .project-row:active {
+    transform: scale(var(--press-scale));
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-press);
+  }
+
+  .project-row:active::before {
+    opacity: 1;
+    transition-duration: 0ms;
+  }
+
+  .project-row:active .row-arrow,
+  .project-row:has(.project-link:focus-visible) .row-arrow {
+    color: var(--signal);
+    transform: translateX(var(--space-1));
+  }
+
+  .project-link {
+    -webkit-tap-highlight-color: transparent;
   }
 
   .project-row::before {
@@ -97,6 +141,11 @@ const { project, ...rest } = Astro.props;
     .project-row:hover::before {
       opacity: 1;
       animation: trace-run var(--dur-trace) var(--ease-move);
+    }
+
+    .project-row:hover .row-arrow {
+      color: var(--signal);
+      transform: translateX(var(--space-1));
     }
   }
 

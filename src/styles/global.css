@@ -238,6 +238,11 @@
     --enter-shift: 0px;
   }
 
+  /* Wide controls (step buttons, project rows) set their own smaller --press-scale; none may sink. */
+  * {
+    --press-scale: 1 !important;
+  }
+
   html {
     scroll-behavior: auto;
   }
