@@ -13,14 +13,16 @@ interface Props {
 
 const { variant = "stack", pressed = false, class: className, ...rest } = Astro.props;
 
-const base = "inline-flex items-center whitespace-nowrap";
+const base = "inline-flex items-center";
+// Names and labels stay on one line; a held-by entry is a phrase, so it wraps inside the screen instead.
 const variants = {
-  stack: "rounded-sm border border-line bg-surface-1 px-2 py-1 font-mono text-mono text-ink",
-  held: "rounded-sm border border-line bg-surface-2 px-2 py-1 font-mono text-mono text-ink",
-  discipline: "rounded-pill border border-line px-3 py-1 text-small text-muted",
-  ai: "rounded-pill border border-signal-2 px-3 py-1 font-mono text-mono text-ink",
+  stack:
+    "whitespace-nowrap rounded-sm border border-line bg-surface-1 px-2 py-1 font-mono text-mono text-ink",
+  held: "max-w-full wrap-break-word rounded-sm border border-line bg-surface-2 px-2 py-1 font-mono text-mono text-ink",
+  discipline: "whitespace-nowrap rounded-pill border border-line px-3 py-1 text-small text-muted",
+  ai: "whitespace-nowrap rounded-pill border border-signal-2 px-3 py-1 font-mono text-mono text-ink",
   filter:
-    "rounded-pill border border-line px-4 py-2 text-small text-ink pressable hover:bg-surface-2 aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg aria-pressed:hover:bg-ink",
+    "whitespace-nowrap rounded-pill border border-line px-4 py-2 text-small text-ink pressable hover:bg-surface-2 aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg aria-pressed:hover:bg-ink",
 };
 ---
 
