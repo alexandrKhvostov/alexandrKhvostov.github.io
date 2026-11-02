@@ -1,20 +1,20 @@
 title: Luvea
 company: playme
 period: 2025 to 2026
-order: 8
-role: "Senior Full Stack Developer / Engineering Lead. Lead: rewrote the project onto a new architecture and laid that architecture out, reworked the funnel engine, built features, launched it and set up A/B tests."
+order: 3
+role: "Led the web app: designed its new architecture and moved the code onto it, reworked the funnel engine, built features, launched it and set up A/B testing."
 disciplines: [fullstack]
 aiAgents: false
-summary: Next.js web app of an AI character chat product. A BFF hides the refresh token from scripts, and A/B buckets are carried over the switch from an in-app browser.
+summary: Next.js web app for an AI character chat product, from paid-ad quiz funnels to paywall and chat, with 700 to 900 subscriptions a day through its funnels.
 glance:
   - value: 700 to 900
     label: subscriptions a day through the funnels
   - value: "30+"
-    label: A/B tests run during development
+    label: A/B tests run
   - value: "25+"
     label: quizzes and quiz variations launched
-  - value: "10"
-    label: phases in the migration plan that moved the code onto the layers
+  - value: "234"
+    label: cross-feature imports untangled in a phased migration
 stack:
   - TypeScript
   - Next.js 15
@@ -95,7 +95,7 @@ structure:
     Web.App/                  Dockerfile and Helm chart
   notes:
     - path: views, widgets, features, experiments
-      why: A view is one route. A widget assembles features and components and holds no business logic. A feature owns the logic for one capability, and its own store stays inside it. The documented litmus test asks whether code maps to a route, is reused across views, or calls a mutation, an experiment or the modal store, and the answer picks the folder. Each A/B test gets its own folder in experiments, which holds all its files.
+      why: A view is one route. A widget assembles features and components and holds no business logic. A feature owns the logic for one capability, and its own store stays inside it. Each A/B test gets its own folder in experiments, which holds all its files.
     - path: services/api-hooks and services/api-client
       why: Each domain has a key factory and a queries file, and most also a mutations file, over a typed endpoint module. Query hooks are built on queryOptions, so a server component can prefetch the same options and hand the cache to the client through dehydrate. The client is one class that adds the Bearer token, times out after 20 seconds and reports failures to Sentry. The BFF has its own instance pointed at /api/, so sign-in calls and API calls share one error and refresh path.
     - path: app/api/auth
@@ -145,22 +145,22 @@ tools:
 decisions:
   - kind: decision
     title: The refresh token lives only in an httpOnly cookie set by the app's own server
-    why: The backend is a separate service. Route handlers on the app's own origin call it and set the refresh token as an httpOnly cookie, so scripts never see it. They return only the access token, which the client keeps in a readable cookie for the Bearer header. The handlers forward the visitor's IP in X-Forwarded-For.
+    why: The backend is a separate service. Route handlers on the app's own origin call it and set the refresh token as an httpOnly cookie, so scripts never see it. They return only the access token, which the client keeps in a readable cookie for the Bearer header.
   - kind: decision
     title: Parallel 401s cause one refresh
-    why: The API client keeps a flag and a queue. The first 401 starts one call to /api/auth/refresh, and requests that fail meanwhile wait in the queue and replay with the new token. A server render has its own path. A 401 or 403 from a server fetch redirects to a route that refreshes, sets both cookies and returns the visitor, and a 10 second guard cookie stops loops. When a refresh is rejected, the BFF deletes the auth cookies and the client clears its session.
+    why: The API client keeps a flag and a queue. The first 401 starts one call to /api/auth/refresh, and requests that fail meanwhile wait in the queue and replay with the new token. When a refresh is rejected, the BFF deletes the auth cookies and the client clears its session.
   - kind: decision
     title: GrowthBook assigns a bucket once and the profile keeps it
     why: GrowthBook is asked only at the entry point of a test, by a user id from a cookie. The bucket is written to the up_ab_test URL parameter, mirrored into cookies, reported to the tag manager as an event when it changes, and sent to the backend with sign-up. After sign-up the profile from the backend is the source and a session store feeds useExperiment. By design, GrowthBook only assigns the bucket. Later code reads the stored bucket, so it does not depend on GrowthBook.
   - kind: decision
     title: The URL carries the bucket across the in-app browser switch
-    why: The project's docs note that when a social-app in-app browser hands the page to the system browser, the URL carries over but the cookies do not. The entry hook writes the bucket into the URL, and when the URL has a bucket and the cookie is missing, the edge middleware restores the cookie. The URL wins over a fresh GrowthBook assignment, which also lets QA force a bucket with a query parameter. Several tests share one parameter, in the form id!value separated by semicolons.
+    why: When a social-app in-app browser hands the page to the system browser, the URL carries over but the cookies do not. The entry hook writes the bucket into the URL, and when the URL has a bucket and the cookie is missing, the edge middleware restores the cookie. The URL wins over a fresh GrowthBook assignment, which also lets QA force a bucket with a query parameter. Several tests share one parameter, in the form id!value separated by semicolons.
   - kind: decision
     title: Funnels are JSON, parsed and cross-checked when they load
     why: Each flow is a JSON file. Zod parses each one, and the registry then checks the flow id, flow name, paywall route, offer type and custom component ids against the code's enums. A typo fails at module load, before any visitor reaches it. A flow names its own paywall route and offer, so a new funnel is a JSON file, ids in the enums and a registry entry.
   - kind: decision
-    title: The code moved onto the layers in ten deployable phases
-    why: The migration plan counted 234 imports between features and split the move into ten phases of one to four pull requests each. They cover browser API wrappers, UI components, API hooks, views, middleware, modals and widgets, barrel cleanup, shared constants and layouts. The plan rates each phase's risk, aims for each to be deployable on its own, and reviews 12 risks and edge cases, such as replacing the custom query wrapper and keeping a path alias. The result is views, widgets, query hooks and middlewares in place of the old src/api.
+    title: Migrated onto the new layers in ten deployable phases
+    why: The migration plan counted 234 imports between features and split the move into ten phases of one to four pull requests each. They cover browser API wrappers, UI components, API hooks, views, middleware, modals and widgets, barrel cleanup, shared constants and layouts. The plan rates each phase's risk and aims for each to be deployable on its own. The result is views, widgets, query hooks and middlewares in place of the old src/api.
 rules:
   items:
     - rule: Browser APIs go through wrappers in lib

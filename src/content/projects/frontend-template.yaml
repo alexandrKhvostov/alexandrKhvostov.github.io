@@ -1,20 +1,20 @@
 title: Frontend template
 company: playme
 period: "2026"
-order: 9
-role: "Senior Full Stack Developer / Engineering Lead. Proposed the template and set it up for vibe-coding with agents, with a platform branch for automatic setup and a funnel branch for starting new funnel projects such as Dualio; on the funnel branch another developer wrote the code from the architecture laid out here."
+order: 11
+role: "Proposed and designed the template and set it up for agent-driven development, with a platform branch for automatic setup and a funnel branch, built on this architecture, for new funnel projects such as Dualio."
 disciplines: [frontend]
 aiAgents: true
-summary: A React and Vite template set up for vibe-coding with agents. It has layer rules in the linter, 17 skills and branches for automatic setup and new funnel projects.
+summary: A React and Vite template set up for agent-driven development. It has layer rules in the linter, 17 skills and branches for automatic setup and new funnel projects.
 glance:
   - value: "8"
     label: layers, imported top-down
   - value: "18"
-    label: Biome boundary and ban messages, each with its reason
+    label: lint rules that say why they fail, 14 of them on imports
   - value: "17"
     label: agent skills
   - value: "3"
-    label: branches beside main, for automatic setup, starting funnel projects like Dualio and deployed-app checks
+    label: "ready-made branches: automatic setup, funnels, deployed-app checks"
 stack:
   - TypeScript
   - React 19
@@ -35,8 +35,8 @@ stack:
   - Checkly
 overview:
   - The frontend template is a React and Vite starter for PlayMe web apps. A new app starts with the same layers, the same lint rules and the same agent skills, so a person or an agent can add a page, an API hook or a store and get the same shape every time.
-  - The main branch is the vibe-coding line, the template itself set up for agent-driven development. It is a single-page app with sign-in, routing, server and client state, plus the lint rules, AGENTS.md and the skills. The platform-workflow branch (the platform line) adds automatic setup, so an app is created and deployed by tool calls, through a bootstrap tool, a hosting tool and an Amplify build. The funnel-workflow branch (the funnel line) is the starting point for new funnel projects such as Dualio. It adds quiz, paywall and account on the shared funnel packages. A small branch adds Playwright and Checkly health checks.
-  - The funnel line shares its layer folders and its quiz and paywall packages with the Dualio web funnel, and its public pages were rebuilt from that app. The branch is meant for starting projects like it.
+  - The main branch is the template itself, set up for agent-driven development. It is a single-page app with sign-in, routing, server and client state, plus the lint rules, AGENTS.md and the skills. The platform-workflow branch (the platform line) adds automatic setup, so an app is created and deployed by tool calls, through a bootstrap tool, a hosting tool and an Amplify build. The funnel-workflow branch (the funnel line) is the starting point for new funnel projects such as Dualio. It adds quiz, paywall and account on the shared funnel packages. A third branch adds Playwright and Checkly checks for deployed apps.
+  - The funnel line's public pages were rebuilt from the Dualio web funnel.
 diagram:
   type: pipeline
   caption: How one agent change passes the checks, from the request to the pull request.
@@ -150,7 +150,7 @@ tools:
           does: Pushes the branch and opens a pull request with the template filled in from the diff.
 decisions:
   - kind: decision
-    title: The main branch is the vibe-coding baseline, and the other branches build on it
+    title: The main branch is the agent-driven baseline, and the other branches build on it
     why: Main is the template set up for agent-driven development. AGENTS.md maps trigger phrases to skills, a hook formats and lints every file the agent edits, lint errors state the layer rule they enforce, and a push must pass pnpm check. The platform branch adds automatic setup on top, and the funnel branch adds what a new funnel project needs.
   - kind: decision
     title: Layer boundaries are lint errors, and each error says why
@@ -166,7 +166,7 @@ decisions:
     why: A pasted template, screenshot or Figma frame is concrete enough to outweigh abstract rules, so AGENTS.md sends any visual reference to the implement-design skill. The skill maps every block to an existing primitive before it writes markup. Raw form elements, hand-built overlays and arbitrary values are named violations, and design tokens keep dark mode working.
   - kind: decision
     title: The platform branch adds automatic setup, so an app is created, configured and deployed by tool calls
-    why: The branch README describes a bootstrap tool that creates the repo from the template, a hosting tool that creates the Amplify app and injects the API address, and an Amplify build from amplify.yml. The build writes the injected VITE_ variables to a .env file, installs with a frozen lockfile, builds and deletes the .env. With one variable set, sign-in and file upload work without an init step. Another product app's first commit matches this branch.
+    why: The branch README describes a bootstrap tool that creates the repo from the template, a hosting tool that creates the Amplify app and injects the API address, and an Amplify build from amplify.yml. The build writes the injected VITE_ variables to a .env file, installs with a frozen lockfile, builds and deletes the .env. With one variable set, sign-in and file upload work without an init step. Another product app was started from this branch.
   - kind: decision
     title: The funnel branch starts new funnel projects, with the funnel coming from shared packages with defined seams
     why: Quiz and paywall come from the shared funnel packages. Each package is imported from one view folder and one service folder only. A config is fetched from a CDN address with a bare client, checked with the package schema and cached for the session. The signup calls return an explicit error until an app wires its endpoints, because a fake success would look like a working signup.

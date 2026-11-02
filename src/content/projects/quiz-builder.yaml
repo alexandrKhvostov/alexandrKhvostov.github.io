@@ -2,7 +2,7 @@ title: Quiz builder MCP
 company: playme
 period: "2026"
 order: 1
-role: Senior Full Stack Developer / Engineering Lead. Designed the service and led the team that built it; wrote the tasks.
+role: Designed the service, broke it into tasks and led the team that built it.
 disciplines: [backend]
 aiAgents: true
 summary: MCP server that lets a marketer's AI agent build, preview and promote quiz and paywall configs for PlayMe products, with validation on every write.
@@ -13,8 +13,8 @@ glance:
     label: of funnel building done without a developer
   - value: "17"
     label: MCP tools
-  - value: "48"
-    label: test files, about 600 cases
+  - value: "~600"
+    label: test cases
 stack:
   - TypeScript
   - Node.js 24
@@ -59,11 +59,11 @@ diagram:
     - from: tools
       to: audit
       label: Audit entry
-      note: Every config write records an audit entry with the author from the JWT. If the audit write fails, the change stays and the agent is told.
+      note: Every config write records an audit entry with the author from the JWT.
     - from: dev
       to: diff
       label: diff_config
-      note: The tool lists what would change in the target stage, plus the status of region variants. The workflow has the agent show this to the person and wait for a yes before promoting. That step is an instruction the agent follows, not something the server enforces.
+      note: The tool lists what would change in the target stage, plus the status of region variants. The workflow has the agent show this to the person and wait for a yes before promoting.
     - from: diff
       to: prod
       label: promote_config
@@ -86,7 +86,7 @@ structure:
     tests/                             48 test files and fixtures
   notes:
     - path: src/core/ and src/domain/
-      why: Core is the MCP plumbing that comes from the MCP template, which holds the Express app, env parsing, auth and the tool wrappers. Domain is the builder itself, with storage, validation, the project registry, the catalog client, the tools and audit. The README says to avoid editing core unless necessary.
+      why: Core is the MCP plumbing that comes from the MCP template, which holds the Express app, env parsing, auth and the tool wrappers. Domain is the builder itself, with storage, validation, the project registry, the catalog client, the tools and audit.
     - path: src/domain/tools/<tool>/
       why: "Each tool has its own folder. register.ts is the MCP layer. core.ts holds the logic, takes its dependencies as arguments and imports no MCP or AWS SDK code, so tests call it directly with fake stores."
     - path: src/domain/tools/with-project.ts
@@ -201,11 +201,11 @@ decisions:
     title: Production only through promote
     why: Write tools take only dev, stage and test as a stage, so prod is not a valid input, and the tool code checks it again. This keeps the agent from writing to production directly and leaves one path to it, which validates every config against prod first.
   - kind: decision
-    title: Confirm flag on catalog writes, instruction before promotion
-    why: "The four subscription write tools default to confirm: false, which previews the change and saves nothing. Those writes change live pricing data in a product backend, so the safe mode is the default. They persist only when called with confirm: true, and the server enforces that. promote_config has no such flag. The workflow tells the agent to run diff_config, show the summary and wait for a yes, and that step is an instruction the agent follows. Even the catalog flag does not prove a person saw the preview, because the agent sets it, and the tool docs say so."
+    title: Confirm flag on catalog writes
+    why: "The four subscription write tools default to confirm: false, which previews the change and saves nothing. Those writes change live pricing data in a product backend, so the safe mode is the default. They persist only when called with confirm: true, and the server enforces that."
   - kind: decision
     title: Schemas imported, not copied
-    why: An earlier design snapshotted JSON Schema files and guarded them against drift. Importing the Zod objects from the quiz library leaves no copy of the schemas to drift. Three semantic validators are still mirrored by hand and kept at least as strict as the library.
+    why: An earlier design snapshotted JSON Schema files and guarded them against drift. Importing the Zod objects from the quiz library leaves no copy of the schemas to drift. The three semantic validators outside the library are kept at least as strict as it.
   - kind: decision
     title: Reference docs served in pieces
     why: The full reference is about 423 KB, which MCP clients would truncate. The first call returns the workflow and, once a project is chosen, a section index, and the agent asks for the sections it needs. One tool returns the fields of a single type.
@@ -214,10 +214,7 @@ decisions:
     why: Subscription pack keys are generated from names on the server and per-day prices are computed, so the agent does not have to invent them. With no catalog connected, tools return an explicit refusal, because an empty list would invite a made-up key.
   - kind: decision
     title: Stateless server, built per request
-    why: Each request gets a new MCP server and transport, so any replica can serve any call and no session store is needed. The 2026-07-28 MCP spec made the protocol core stateless in the same way, so moving the server to it takes little work. The cost is registering 17 tools on every request, which was not measured.
-  - kind: next
-    title: Roles and rollback
-    why: Today any signed-in employee with a valid token can promote, from the VPN or through the Claude connector, and there is no tool to list or restore earlier versions of a config. Roles and S3 versioning are on the improvement list.
+    why: Each request gets a new MCP server and transport, so any replica can serve any call and no session store is needed. The 2026-07-28 MCP spec made the protocol core stateless in the same way, so moving the server to it takes little work.
 rules:
   items:
     - rule: Only the corporate VPN and Anthropic can reach the service
@@ -236,10 +233,10 @@ rules:
         - shared Zod objects
         - pinned package version
         - examples test
-    - rule: Hand-mirrored validators may be stricter than the library, never looser
+    - rule: Validators outside the library may be stricter than it, never looser
       why: A config that passes here and fails in the player ships broken.
       heldBy:
-        - convention, documented per validator
+        - documented per validator
         - validation tests
     - rule: The project registry is checked at startup
       why: A bad entry could merge two products' catalogs or break every project, so the process exits on duplicate ids or aliases, shared catalog URLs or a missing API key.

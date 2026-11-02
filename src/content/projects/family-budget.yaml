@@ -2,15 +2,15 @@ title: Family budget
 company: side
 period: "2026"
 order: 1
-role: "Senior Full Stack Developer / Engineering Lead. Pet project: designed it and set it up for AI-orchestrated development."
+role: "Side project: designed it and runs its AI-orchestrated development, deciding every step."
 disciplines: [backend]
 aiAgents: true
-summary: A family budget kept through a Telegram bot. A message becomes a confirmed entry. The project is set up for AI-orchestrated development.
+summary: "Telegram bot that keeps a family budget: a language model turns a chat message into a draft entry the member confirms. Built so AI agents write the code under lint, test and review gates."
 glance:
   - value: "673"
-    label: tests on main, counted as it calls (each table of cases counts once)
-  - value: "91"
-    label: gold cases (88 scored), mean of 3 runs
+    label: automated tests on main
+  - value: 98.9%
+    label: amount accuracy of the chosen model on a 91-case gold set
   - value: "24"
     label: decision records for choices that are expensive to reverse
   - value: "4"
@@ -32,8 +32,8 @@ stack:
   - lefthook
 overview:
   - Family budget is a Telegram bot that keeps a household's budget. A member writes an expense or income as a message, a language model reads it into a draft with amount, category and place, and the entry is saved only when the member taps Save. Budget groups take a share of income, 50/30/20 by default, categories carry plans per period, and the next period opens by itself.
-  - The code is a hexagonal Nx monorepo. Domain rules, ports, use cases, the AI adapter and the persistence adapter are separate projects, and lint rejects an import that crosses a layer. One port has three parsers, for Ollama, Gemini and Anthropic, picked by one environment setting. The bot runs on Claude Haiku 5.5, chosen on a gold set of 91 cases, 88 of them scored.
-  - The project is set up for AI-orchestrated development. The developer decides each step, approves each spec, goes through the code with the agent after each task, as the project's rule, and decides when to commit. Separate agent roles write the tests, implement the task and review the diff, under the same gates people use. Each task's cost is tracked by role and model.
+  - The code is a hexagonal Nx monorepo. Domain rules, ports, use cases, the AI adapter and the persistence adapter are separate projects, and lint rejects an import that crosses a layer. One port has three parsers, for Ollama, Gemini and Anthropic, picked by one environment setting. The bot runs on Claude Haiku 5.5, chosen on a gold set of 91 cases.
+  - The project is set up for AI-orchestrated development. Every step and spec is decided and approved by hand. Separate agent roles write the tests, implement and review under the same gates people use, and each task's cost is tracked by role and model.
 diagram:
   type: pipeline
   caption: One text message, from the chat to a saved entry.
@@ -93,7 +93,7 @@ structure:
     - path: libs/core/domain, ports, application
       why: Domain imports nothing, ports import domain, and use cases import both. Each project carries a type tag, and lint bans Nest, grammY, Prisma and the model SDKs in the core. Use cases are plain classes, so tests build them with fakes of the ports and call no network, model or database.
     - path: libs/adapters/ai
-      why: One folder per port and one subfolder per vendor, and only those import a vendor SDK. Prompts are versioned files, and the bot's model uses v3. The eval folder holds the gold set and the scorer, and the runner drives the same adapter class the bot uses.
+      why: One folder per port and one subfolder per vendor, and only those import a vendor SDK. Prompts are versioned files. The eval folder holds the gold set and the scorer, and the runner drives the same adapter class the bot uses.
     - path: libs/adapters/persistence
       why: A Prisma schema with hand-written SQL beside it for the triggers, the exclusion constraint and 5 report views. Typed SQL files read the views. CI applies the migrations to a real Postgres and checks for drift.
     - path: apps/server
@@ -154,10 +154,10 @@ decisions:
     why: The reviewer choice came from an A/B over 10 reviews of one spec, with the decision rule written before the run. The Opus reviewer found all 4 blocking findings, so one reviewer runs with its effort scaled by risk. Fix rounds go to a fresh cheap implementer, which does not pay again for the context of the first one.
   - kind: next
     title: Add a category from the chat
-    why: A member names a category, picks a group, and the flow is planned to set an optional plan for the current period. Drafts are planned so a restart does not lose them. Plan edits and the carryover of leftover money follow.
+    why: A member names a category, picks a budget group and can set a plan for the current period, through the same restart-safe drafts. Plan edits and carrying leftover money over follow.
   - kind: next
     title: Other currencies, receipt photos and voice
-    why: Entries in other currencies are converted at the rate of the transaction date from one central-bank source. Receipt photos and voice messages then enter through the same draft flow, with each model will be chosen on its own gold set.
+    why: Entries in other currencies are converted at the rate of the transaction date from one central-bank source. Receipt photos and voice messages then enter through the same draft flow, each with its model chosen on its own gold set.
   - kind: next
     title: Questions in plain language
     why: A read-only agent answers from typed tools over the report views, which already exist. Plan against actual and warnings at 80% and 100% of a group's limit come with it.
@@ -183,7 +183,7 @@ rules:
       why: One quality bar applies, so a green result means the same for everyone.
       heldBy:
         - lefthook pre-commit with the format check, the adapter sync check and the gates for affected projects
-        - gates are lint, typecheck, test and build, and build is there because green tests once shipped a bundle that did not build
+        - gates are lint, typecheck, test and build
         - a commit-msg check for Conventional Commits and against agent credit lines
         - CI runs pnpm check
     - rule: An implementer cannot weaken its tests

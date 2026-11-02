@@ -1,18 +1,14 @@
 title: Growio CMS
 company: playme
 period: "2026"
-order: 11
-role: "Senior Full Stack Developer / Engineering Lead. Set up the architecture and the build and deploy pipeline, reviewed the code and set the main tasks."
+order: 7
+role: "Designed the architecture and the build and release pipeline, planned the work and led code review."
 disciplines: [frontend]
 aiAgents: true
-summary: The admin panel for Growio's courses. Editors build lessons from text, image, video and quiz blocks, send a course for review and publish it.
+summary: The admin panel for Growio's courses. Editors build lessons from text, image, video and quiz blocks, send a course for review and publish it. Agents can edit the same courses through the Growio CMS MCP.
 glance:
   - value: "6"
     label: content levels, from course down to lesson block
-  - value: "4"
-    label: node types in a lesson block, text, image, video and question
-  - value: "4"
-    label: steps in the review flow, from draft to published
   - value: "5"
     label: deploy environments, each with its own Helm values
 stack:
@@ -119,7 +115,7 @@ tools:
   intro: The levels an editor works through, and the nodes a lesson block can hold.
   groups:
     - title: Content tree
-      note: Only courses has a list page. Every other level opens from the table of its parent.
+      note: Only courses have a list page. Every other level opens from the table of its parent.
       items:
         - name: Course
           does: Created from the course list with a title and a description. It has the review flow, from send for review to publish, and it can be archived.
@@ -156,13 +152,13 @@ decisions:
     why: For an image or a video the CMS asks the API to start an upload, sends the file with PUT to the upload URL it gets back, confirms the upload, and then creates the image or video record with its size or duration. A block's node list holds the image, video or question id and a sort order, not the file.
   - kind: decision
     title: Quiz questions are validated with Zod before they are saved
-    why: A schema per question type runs when the editor saves. Single choice needs the question text, an explanation, feedback for a wrong answer, at least 2 options with text and at least one correct option. True or false needs the text, both explanations and the correct answer. The first failed rule appears as the error notification.
+    why: A schema per question type runs when the editor saves. Single choice needs the question text, an explanation, feedback for a wrong answer, at least 2 options with text and at least one correct option. True or false needs the text, both explanations and the correct answer.
   - kind: decision
     title: Both HTTP clients share one refresh behaviour
     why: The typed openapi-fetch calls and Refine's axios data provider each attach the bearer token and refresh it on a 401 under an async-mutex lock. Requests that fail at the same time wait for one refresh and are replayed with the new token. When the refresh fails, the stored tokens are cleared and the editor goes to the login page.
   - kind: decision
     title: Production deploys only from version tags, with an image built per environment
-    why: A manual workflow run deploys the dev and stage environments, and a v* tag deploys prod. Each run builds the image with that environment's API address as a build argument, pushes it to the registry and deploys the Helm chart with the environment's values. nginx caches hashed assets for a year, never caches index.html and answers /health for the probes.
+    why: A manual workflow run deploys the dev and stage environments, and a v* tag deploys prod. Each run builds the image with that environment's API address as a build argument, pushes it to the registry and deploys the Helm chart with the environment's values.
 rules:
   items:
     - rule: Pages stay thin, features hold the logic, widgets only compose
@@ -171,15 +167,14 @@ rules:
         - documented in docs/ARCHITECTURE.md with a where-does-this-code-belong test
         - documented in CLAUDE.md
     - rule: Browser storage is reached only through lib/storage
-      why: Keys live in one enum and one place handles parse errors. The sidebar cookie is the one exception, documented in CLAUDE.md.
+      why: Keys live in one enum and one place handles parse errors.
       heldBy:
-        - documented in docs/ARCHITECTURE.md (Rule 8) and CLAUDE.md
-        - Biome noDocumentCookie switched off for the shadcn sidebar
+        - documented in docs/ARCHITECTURE.md and CLAUDE.md
     - rule: Environment variables, the API address included, are read through lib/env
       why: The app gets one validated entry point and a clear message when the API address is not a URL.
       heldBy:
         - Zod schema in lib/env.ts, which throws a numbered list of problems
-        - documented in docs/ARCHITECTURE.md (Rule 11) and CLAUDE.md
+        - documented in docs/ARCHITECTURE.md and CLAUDE.md
     - rule: Biome is the only linter and formatter, with sorted imports and sorted Tailwind classes
       why: One tool and one config mean the same style from every editor and every contributor.
       heldBy:

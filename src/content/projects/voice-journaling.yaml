@@ -2,15 +2,13 @@ title: Voice journaling platform
 company: sysgears
 period: 2021 to 2024
 order: 1
-role: "Fullstack Lead across the platform: the backends, the mobile apps, the CMS and the UI library."
+role: "Full Stack Lead across the platform: the backends, the mobile apps, the CMS and the UI library."
 disciplines: [fullstack]
 aiAgents: false
-summary: Voice journaling platform with five NestJS backends, mobile apps, a CMS and a custom UI library, with the five backends deployed through one shared pipeline.
+summary: "Voice journaling platform: five NestJS backends deployed through one shared pipeline, React Native apps, a Next.js site, a CMS and a cross-platform UI library."
 glance:
   - value: "5"
     label: backends, each with its own Postgres database
-  - value: "3"
-    label: client apps, plus a CMS with two builds
   - value: "81"
     label: component folders in the UI library, built for web and mobile
   - value: "7"
@@ -170,14 +168,14 @@ decisions:
     title: Published content is immutable, and the database enforces it
     why: Each content level has a base table and a versions table, with a published_at timestamp. Composite foreign keys limit which child types a parent accepts, and PL/pgSQL triggers reject an update to a published version. Answers point at an exact version, so old answers keep their meaning after content changes. The rules hold for every service and for a manual script too.
   - kind: decision
-    title: One UI library name for two generations, built for web and mobile
+    title: UI library 2.x shipped under the same name, so apps moved one at a time
     why: The 2.x line on React Native Elements shipped under the same package name as the 1.x NativeBase line, so apps could move one at a time by changing the version, and the journaling app moved screen by screen. The new library added theme tokens, utility props and unit tests for its components. the research site and the journaling app moved to it while 1.x kept shipping fixes. One source builds the web and the mobile bundle through file suffixes.
   - kind: decision
     title: One admin codebase serves the CMS and the research admin
     why: Both apps edit the same entities, so the repo builds two apps from one source, chosen by an environment variable at build time. Entity pages follow one four-view pattern and one route helper, and editors upload media straight to storage with signed URLs. The rich text editor keeps asset ids, not copied URLs, in the saved content.
 rules:
   items:
-    - rule: Each backend owns its database and, by design, other services reach its data through its API
+    - rule: Each backend owns its database, and other services go through its API
       why: A schema change in one service cannot break another through a shared table, and each product's data stays with that product.
       heldBy:
         - Terraform defines a database instance for core, labs, insights and journal; local Docker Compose creates one per service

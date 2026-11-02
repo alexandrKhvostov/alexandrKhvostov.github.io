@@ -17,7 +17,7 @@ export const nodes = {
   "dualio-app": { label: "Dualio app", kind: "project" },
   luvea: { label: "Luvea", kind: "project" },
   "voice-journaling": { label: "Voice journaling platform", kind: "project" },
-  "mcp-template": { label: "MCP server template", kind: "project" },
+  "mcp-template": { label: "MCP template", kind: "project" },
   "frontend-template": { label: "Frontend template", kind: "project" },
   "family-budget": { label: "Family budget", kind: "project" },
   "growio-app": { label: "Growio app", kind: "project" },

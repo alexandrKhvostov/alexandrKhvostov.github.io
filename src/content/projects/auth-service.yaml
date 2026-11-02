@@ -1,20 +1,18 @@
 title: Auth service
 company: playme
 period: "2026"
-order: 2
-role: Senior Full Stack Developer / Engineering Lead. Designed and built the service.
+order: 9
+role: Designed and built the service.
 disciplines: [backend]
 aiAgents: true
 summary: OAuth authorization server that gives PlayMe's remote MCP servers one Google sign-in, one set of signing keys and one access list.
 glance:
-  - value: "9"
-    label: OAuth, discovery and health endpoints
+  - value: "7"
+    label: OAuth and discovery endpoints
   - value: "4"
-    label: Postgres tables
-  - value: 1 h
-    label: access token lifetime
-  - value: 30 days
-    label: refresh token lifetime
+    label: MCP servers sign in through it
+  - value: "0"
+    label: calls to the auth service per MCP request
 stack:
   - TypeScript
   - Node.js 22
@@ -28,7 +26,7 @@ stack:
 overview:
   - PlayMe runs several remote MCP servers that AI clients such as Claude, Cursor and Codex connect to. Without a shared service, each server would need its own Google login, user store, token signing and access list. The auth service holds all of that once. An MCP server only checks a signed token and keeps no user data or signing keys.
   - Users sign in with Google, limited to the company's Workspace domain. The service checks the user's access to the requested MCP server and issues an RS256 JWT whose audience is that server's URL, so an MCP server that checks the audience rejects a token minted for another server. MCP servers verify the token offline against the service's public key set.
-  - Each MCP server is either open to the whole domain or limited to an allowlist, checked at login, at code exchange and at every refresh. An admin console replaces routine hand-run SQL for managing servers and users. The MCP template has this auth mode as its default, MCP servers that use it include the quiz builder, the media storage MCP, a marketing MCP and a CMS MCP.
+  - Each MCP server is either open to the whole domain or limited to an allowlist, checked at login, at code exchange and at every refresh. An admin console replaces routine hand-run SQL for managing servers and users. It is the default auth mode of the MCP template, and the quiz builder, the media storage MCP, a marketing MCP and a CMS MCP sign in through it.
 diagram:
   type: sequence
   caption: How an AI client logs in at an MCP server, from the first 401 to offline token verification.
@@ -87,7 +85,7 @@ structure:
       db.ts              Postgres pool
       well-known/        authorization server metadata and JWKS
       auth/              the OAuth endpoints
-        jwt.ts, pkce.ts, resource-uri.ts   small helpers
+        jwt.ts, pkce.ts, resource-uri.ts   helpers
         pending.ts       in-flight logins, in memory per pod
         store/           OAuthStore interface and Postgres implementation
       admin/             admin console
@@ -98,12 +96,12 @@ structure:
     - path: src/auth/store/
       why: The OAuth handlers call the store directly, with no service layer. OAuthStore is the one interface between them and Postgres.
     - path: src/auth/pending.ts
-      why: Holds in-flight logins and authorization codes in memory, per pod. A callback that reached another pod would fail, which is why the service runs one replica.
+      why: Holds in-flight logins and authorization codes in memory, per pod. Keeping them in memory keeps Redis out of the stack, so the service runs as one replica.
     - path: src/admin/
       why: The admin console is its own module with its own session, CSRF check, store, routes and HTML rendering. Pages are rendered on the server and use no JavaScript.
 tools:
   title: Endpoints
-  intro: Five OAuth endpoints, two discovery endpoints and two health endpoints, plus an admin console.
+  intro: Five OAuth endpoints and two discovery endpoints, plus an admin console.
   groups:
     - title: OAuth
       items:
@@ -116,17 +114,13 @@ tools:
         - name: POST /auth/token
           does: Exchanges an authorization code with its PKCE verifier, or a refresh token, for an RS256 access token and a new refresh token. Access is checked again each time.
         - name: POST /auth/revoke
-          does: Deletes a refresh token (RFC 7009) and always answers 200. Access tokens already issued stay valid until they expire.
+          does: Deletes a refresh token (RFC 7009) and always answers 200.
     - title: Discovery
       items:
         - name: GET /.well-known/oauth-authorization-server
           does: Authorization server metadata (RFC 8414) with the issuer, the endpoint URLs and the supported grants. PKCE S256 is the only method.
         - name: GET /.well-known/jwks.json
           does: The public signing keys, cacheable for an hour. MCP servers verify tokens against them offline.
-    - title: Health
-      items:
-        - name: Health endpoints
-          does: Two health-check endpoints.
     - title: Admin console
       items:
         - name: Admin console
@@ -140,19 +134,10 @@ decisions:
     why: The resource is checked at authorize time against the registered servers and carried on the server side into token signing. A client is not tied to one server at registration because a single client may talk to several.
   - kind: decision
     title: Offline JWTs, database-backed refresh tokens
-    why: Access tokens are verified through the public keys, so MCP servers stay stateless and the auth service is not on the request path. Refresh tokens are rotating opaque rows in Postgres, which allows server-side revocation and an access re-check on every refresh. An issued access token lives out its hour.
-  - kind: trade-off
-    title: A single replica on purpose
-    why: Pending logins and authorization codes live in process memory, and logins are rare, so one replica was enough and avoids running Redis. MCP servers verify tokens offline, so tokens already issued keep working until they expire. An outage stops new logins and refreshes, not calls in progress.
-  - kind: trade-off
-    title: No service layer between handlers and the store
-    why: The OAuth handlers call the store directly, with no service layer in between. For a service of 25 source files and about 2,500 lines, a service layer would only add overhead. OAuthStore, with its Postgres implementation, is the one interface between the handlers and Postgres.
-  - kind: next
-    title: Move pending login state to Postgres or Redis
-    why: Codes and Google state are per pod, so a callback landing on another pod would fail. The pending store is a three-method interface and tokens and clients are already in Postgres, so this is the step before scaling out to several replicas.
-  - kind: next
-    title: Run a key rotation
-    why: Tokens carry a key id and MCP servers pick the key by id, so the verifying side is ready. The service publishes one key today and has not rotated it yet. Serving a second key next to the current one is the remaining step.
+    why: Access tokens are verified through the public keys, so MCP servers stay stateless and the auth service is not on the request path. Refresh tokens are rotating opaque rows in Postgres, which allows server-side revocation and an access re-check on every refresh.
+  - kind: decision
+    title: One replica, no Redis
+    why: Pending logins and authorization codes live in process memory, and logins are rare, so one replica was enough and avoids running Redis. MCP servers verify tokens offline, so tokens already issued keep working until they expire.
 rules:
   items:
     - rule: Only the corporate VPN and Anthropic can reach the service
@@ -169,10 +154,10 @@ rules:
       heldBy:
         - DB transaction
     - rule: A resource URL has exactly one canonical form
-      why: Rows are compared by SQL equality, so a second normaliser would make a registered MCP server look unknown.
+      why: Rows are compared by SQL equality, so a second normalizer would make a registered MCP server look unknown.
       heldBy:
         - unit tests
-        - convention
+        - documented rule
     - rule: The admin console has no JavaScript, a strict CSP and escaped output
       why: It keeps the attack surface small. Destructive actions use a server-rendered confirmation page, and every state-changing POST after sign-in is checked for a CSRF token.
       heldBy:

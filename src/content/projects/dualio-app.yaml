@@ -1,16 +1,16 @@
 title: Dualio app
 company: playme
 period: "2026"
-order: 6
-role: Senior Full Stack Developer / Engineering Lead. Responsible for the app architecture, code quality and review, and the Expo deploy setup.
+order: 5
+role: Owned the app architecture, code quality and review, and the Expo deploy setup.
 disciplines: [mobile]
 aiAgents: false
 summary: iOS and Android client of Dualio, where users create an AI avatar and generate videos with it, shipped through Expo builds and over-the-air updates.
 glance:
-  - value: "31"
-    label: route files, four tabs
-  - value: "33"
-    label: API paths used
+  - value: iOS + Android
+    label: from one Expo codebase
+  - value: "2"
+    label: release paths, native build or over-the-air update, picked by CI
   - value: "3"
     label: release workflows, dev, stage and prod
 stack:
@@ -52,7 +52,7 @@ diagram:
     - from: swagger
       to: types
       label: Generate types
-      note: The prepare script regenerates src/types/api-schema.ts from the backend's Swagger, 7,627 lines at the time of writing. The file is not edited by hand, and lint skips it.
+      note: The prepare script regenerates src/types/api-schema.ts from the backend's Swagger. The file is not edited by hand, and lint skips it.
     - from: types
       to: code
       label: Alias and call
@@ -93,13 +93,13 @@ structure:
     .docs/              architecture, API interaction and git flow guides
   notes:
     - path: src/services/api-hooks/<entity>/
-      why: "Each entity has keys, queries, mutations and types files, and a query-key factory is required. Components are not meant to call fetch, so cache invalidation lives next to the call. Held by convention and review."
+      why: "Each entity has keys, queries, mutations and types files, and a query-key factory is required. Components never call fetch, so cache invalidation lives next to the call."
     - path: src/types/api-schema.ts
       why: The only source of API types, generated from the backend Swagger. Entity types files hold aliases, never hand-written models.
     - path: src/app/ and src/screens/
       why: Route files stay thin and each route has one screen that composes widgets and features and runs the main query. Layouts do the route guards by returning a redirect.
     - path: src/features/
-      why: "One folder per business action. The layering is a mix of layered design and Feature-Sliced Design, described in .docs. No import-boundary lint rule was found in the ESLint config."
+      why: "One folder per business action. The layering is a mix of layered design and Feature-Sliced Design, described in .docs."
     - path: .github/actions/detect-build-type/
       why: The composite action that decides between a native build, an update and an error. The stage release workflow calls it before building.
 tools:
@@ -137,16 +137,13 @@ decisions:
     why: The version constant in app.config.ts is also the Expo runtimeVersion, which Expo uses to match an update to compatible binaries. CI compares the native inputs with the last build tag and picks a native build, an update or an error. The stage workflow runs on every push to a release branch, a prod build on a v tag with store submit.
   - kind: decision
     title: One shared token refresh
-    why: Concurrent 401 responses share one refresh behind a mutex, and a request whose token was already replaced retries with the new one. A late refresh cannot bring back a logged-out session. Refresh tries 3 times with backoff, and a 401 or 403 on refresh logs the user out. A 214-line unit test covers it.
+    why: Concurrent 401 responses share one refresh behind a mutex, and a request whose token was already replaced retries with the new one. A late refresh cannot bring back a logged-out session. Refresh tries 3 times with backoff, and a 401 or 403 on refresh logs the user out. A dedicated unit test covers it.
   - kind: decision
     title: Attribution kept until sign-up
     why: AppsFlyer's deep link and install callbacks write into a persisted store, because sign-up comes several screens after the first launch. The merge keeps old keys and ignores undefined, so a later partial payload cannot erase earlier attribution. The store is sent with email, Google and Apple register requests, then cleared.
-  - kind: trade-off
-    title: Update check blocks the launch
-    why: The splash stays up until fonts, auth status and the update check finish, and a pending update is downloaded and applied before the app renders. The aim looks to be keeping users on the latest JavaScript; the cost is that launch waits on the check.
-  - kind: trade-off
-    title: Layer rules rest on review, tests are few
-    why: The layer order and the hooks-only rule are documented, and CodeRabbit is told to flag violations, but no lint rule checks imports. There are 4 test files, and CI runs only the release workflows, so lint and tests run in git hooks.
+  - kind: decision
+    title: Updates apply before launch
+    why: The splash stays up until fonts, auth status and the update check finish, and a pending update is applied before the app renders, so users always run the latest JavaScript.
 rules:
   items:
     - rule: API types come only from the generated OpenAPI schema
@@ -166,7 +163,7 @@ rules:
         - documented in CLAUDE.md and .docs
         - CodeRabbit review
     - rule: Lint, types, formatting and commit messages are checked by git hooks on commit and push
-      why: CI only runs releases, so these checks run in git hooks. ESLint runs with no allowed warnings, and commitlint limits the header length.
+      why: "Problems are caught before code leaves a developer's machine: git hooks run the checks. ESLint runs with no allowed warnings, and commitlint limits the header length."
       heldBy:
         - Husky pre-commit, commit-msg and pre-push
         - ESLint

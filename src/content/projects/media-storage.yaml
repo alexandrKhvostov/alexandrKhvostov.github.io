@@ -1,20 +1,18 @@
 title: Media storage MCP
 company: playme
 period: "2026"
-order: 3
-role: Senior Full Stack Developer / Engineering Lead. Designed and built the server.
+order: 8
+role: Designed and built the server.
 disciplines: [backend]
 aiAgents: true
 summary: MCP server that lets an AI agent upload, optimize and list images and video on PlayMe's CDN, from a URL or from the agent's sandbox.
 glance:
   - value: "8"
     label: MCP tools
+  - value: "2"
+    label: upload paths into one shared pipeline
   - value: "128"
-    label: test cases in 14 files
-  - value: "20"
-    label: files per upload call
-  - value: 150 MiB
-    label: video size limit
+    label: test cases, including upload races
 stack:
   - TypeScript
   - Node.js 24
@@ -29,9 +27,9 @@ stack:
   - Docker
   - Helm
 overview:
-  - PlayMe's products need permanent CDN URLs for images, video and other media, with consistent names and web-friendly encoding. Done by hand, that means ffmpeg, S3 and a CloudFront invalidation. This server lets people who are not developers ask an AI agent such as Claude to upload, optimize, list and look up files in plain language. Overwriting needs an explicit force flag.
+  - PlayMe's products need permanent CDN URLs for images, video and other media, with consistent names and web-friendly encoding. Done by hand, that means ffmpeg, S3 and a CloudFront invalidation. This server lets people who are not developers ask an AI agent such as Claude to upload, optimize, list and look up files in plain language.
   - A file arrives either as a public URL or, when it exists only in the agent's sandbox, through a three-call local upload. Both paths end in one pipeline. Raster images are resized to fit 1920 by 1920 pixels and converted to WebP, SVG, PDF and audio pass through, and video that is already MP4 gets a lossless faststart fix when it needs one, or an opt-in transcode with renditions and a poster.
-  - The server keeps no session in memory and runs 2 to 3 replicas in production, so the state of a local upload lives in S3. It verifies tokens from the auth service. The MCP template was first developed in this repo, and its reusable part is the core layer.
+  - The server keeps no session in memory and runs 2 to 3 replicas in production, so the state of a local upload lives in S3. It verifies tokens from the auth service. The MCP template grew out of this repo, and its core layer became the shared base for later servers.
 diagram:
   type: sequence
   caption: The local-file upload, where three calls from the agent share their state through an S3 manifest instead of server memory.
@@ -48,7 +46,7 @@ diagram:
     - from: client
       to: mcp
       label: create_upload
-      note: The call passes MCP auth. The server checks the project, filename, content type, exact size and options, then returns an upload URL and a signed token bound to the upload id, type and size, valid for 10 minutes by default.
+      note: The call passes MCP auth. The server checks the project, filename, content type, exact size and options, then returns an upload URL and a signed token bound to the upload id, type and size.
     - from: mcp
       to: s3
       label: Write pending manifest
@@ -143,13 +141,10 @@ decisions:
     why: Local upload needs the agent to send raw bytes with an HTTP PUT, which an agent with only MCP access cannot do. The server instructions, the create_upload description, the guide and the upload prompt all tell the agent to confirm first that it can read the file and send a PUT. If it cannot, it explains the blocker without creating a session and asks for a reachable file or a public URL.
   - kind: decision
     title: Video passes through unless asked
-    why: Transcoding is lossy and uses a lot of CPU. By default an MP4 gets a lossless remux with faststart, and only if its moov box sits after the media data. A transcode with renditions and a poster is opt-in. The ffmpeg jobs share one slot per pod with a 5 minute queue wait, because the pod has a CPU limit of about one core.
+    why: Transcoding is lossy and uses a lot of CPU. By default an MP4 gets a lossless remux with faststart, and only if its moov box sits after the media data. A transcode with renditions and a poster is opt-in.
   - kind: decision
     title: The server teaches the agent how to use it
     why: Limits live in one capabilities object, descriptions stay short, and details come from get_guide sections. The descriptions also tell the agent to ask the person before choosing lossy options or overwriting a file.
-  - kind: next
-    title: A delete tool
-    why: A draft exists and was not released. It previews by default and deletes only exact named files after a typed confirmation.
 rules:
   items:
     - rule: A bad or partial configuration stops the server at startup

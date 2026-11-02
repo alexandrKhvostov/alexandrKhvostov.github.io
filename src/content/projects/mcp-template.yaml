@@ -1,8 +1,8 @@
-title: MCP server template
+title: MCP template
 company: playme
 period: "2026"
-order: 7
-role: Senior Full Stack Developer / Engineering Lead. Designed and built the template and set it up for agent-driven work, so a new server is a ready service out of the box.
+order: 10
+role: Designed and built the template and set it up for agent-driven work.
 disciplines: [backend]
 aiAgents: true
 summary: Starter repo for remote MCP servers with a shared core, pluggable auth, agent skills and a deploy pipeline, ready to run once initialized.
@@ -13,8 +13,6 @@ glance:
     label: auth modes, central JWT or shared secret
   - value: "3"
     label: deploy environments, dev, stage and prod
-  - value: about 890
-    label: lines of source and tests
 stack:
   - TypeScript
   - Node.js 24
@@ -28,9 +26,9 @@ stack:
   - Helm
   - GitHub Actions
 overview:
-  - PlayMe ran several MCP servers that wrap a REST API as tools for Claude, and each needs the same shell, made of an HTTP endpoint, a health check, sign-in, error handling, a container, a Helm chart and a deploy pipeline. The template is a GitHub template repo for a stateless MCP server that ships all of it. A backend developer replaces the domain folder and keeps the core.
+  - PlayMe runs several MCP servers that wrap a REST API as tools for Claude, and each needs the same shell, made of an HTTP endpoint, a health check, sign-in, error handling, a container, a Helm chart and a deploy pipeline. The template is a GitHub template repo for a stateless MCP server that ships all of it. A backend developer replaces the domain folder and keeps the core.
   - The core folder holds the Express app with its MCP and health routes, env parsing, two auth strategies, and wrappers that turn thrown errors into MCP error results and prefix tool names. Auth defaults to RS256 tokens from the central auth service, checked against its public keys. A shared-secret header is the alternative. Each request builds a new MCP server, so nothing is kept between requests.
-  - The template started inside the media storage MCP, where the core and domain split was made. The quiz builder began as a copy of it, and later improvements were carried back by comparing the two repos. Servers on the default auth mode verify tokens from the auth service.
+  - The template started inside the media storage MCP, where the core and domain split was made. The quiz builder started from it, and later improvements were carried back into the template. Servers on the default auth mode verify tokens from the auth service.
 diagram:
   type: pipeline
   caption: How a new MCP server goes from the template to a deployed service, with the skill or check behind each step.
@@ -84,7 +82,7 @@ structure:
     src/core/auth/          AuthStrategy interface, shared secret, remote JWT
     src/core/utils/         error, tool-name and result wrappers
     src/domain/             stubs to replace: API client, env, tools, prompts
-    tests/core/             2 test files
+    tests/core/             core tests
     .claude/skills/         9 agent skills
     k8s/                    Helm chart with dev, stage and prod values
     .github/workflows/      deploy to dev or stage, deploy to prod on a tag
@@ -92,11 +90,11 @@ structure:
     scripts/, manifest.json Claude Desktop bundle builder
   notes:
     - path: src/core/ and src/domain/
-      why: Core is reused unchanged and domain is replaced per service. The split is a convention. The Biome config has no import restriction, so nothing stops core from importing domain.
+      why: Core is reused unchanged and domain is replaced per service.
     - path: src/core/auth/
       why: One AuthStrategy interface with two implementations. In JWT mode the server holds no credentials, signing key or database. The key-set URL used by pods is separate from the public issuer URL, because pods cannot reach public URLs that route back into the cluster.
     - path: src/core/utils/
-      why: The wrappers patch the SDK's tool registration, so a tool needs no error handling or name prefix of its own. The likely cost is that the behaviour is not visible at the registration call.
+      why: The wrappers patch the SDK's tool registration, so a tool needs no error handling or name prefix of its own.
     - path: src/domain/tools/<tool>/
       why: For non-trivial tools, a thin register.ts holds the MCP layer and a pure core.ts holds the logic with no SDK import, so unit tests need no MCP server. The quiz builder uses this pattern.
     - path: k8s/ and .github/workflows/
@@ -114,7 +112,7 @@ tools:
         - name: /add-tool
           does: Writes a tool module with Zod schemas, an output schema and read-only, create, update or delete annotations. List tools get a page size capped at 50.
         - name: /add-prompt
-          does: Adds an MCP prompt. CLAUDE.md names it as the way to add prompts.
+          does: Adds an MCP prompt.
         - name: /add-env
           does: Classifies a variable as secret or plain config, with ambiguous cases treated as secret. Edits the Zod schema, the example env file and the --set lines in both workflows, then prints the steps left in the GitHub UI.
     - title: Ship
@@ -134,10 +132,10 @@ decisions:
     why: Each POST to the MCP endpoint builds a new MCP server and transport around one shared API client. Nothing carries between requests, and a per-request context holds the actor so write tools can record who made a change. The chart includes a horizontal autoscaler.
   - kind: decision
     title: Skills as the way to add anything
-    why: CLAUDE.md tells agents to use the tool, prompt and env skills and not to hand-edit env, Helm or workflow files for a new variable. The skills carry the pattern. Annotations by tool type and the 50-item page size are skill instructions, not checks in code.
+    why: CLAUDE.md tells agents to use the tool, prompt and env skills and not to hand-edit env, Helm or workflow files for a new variable. The skills carry the pattern.
   - kind: decision
     title: Secrets from GitHub Environments
-    why: The deploy workflows set secrets and variables on the Helm release from GitHub Environments. This replaced SOPS-encrypted files in the repo. The commit message gives the aim as removing hardcoded secrets, and a runbook describes the migration. The upgrade runs atomically with a 5 minute timeout, so a failed deploy rolls back.
+    why: The deploy workflows set secrets and variables on the Helm release from GitHub Environments. This replaced SOPS-encrypted files in the repo. The aim was to remove hardcoded secrets from the repo, and a runbook covers the migration. The upgrade runs atomically with a 5 minute timeout, so a failed deploy rolls back.
 rules:
   items:
     - rule: A misconfigured server exits at boot
@@ -159,9 +157,9 @@ rules:
     - rule: Core stays untouched and tool logic stays free of MCP code
       why: Core is shared plumbing, and a pure core.ts per tool keeps tools unit-testable.
       heldBy:
-        - convention
+        - documented rule
         - documented in CLAUDE.md
-  agents: CLAUDE.md routes the agent to the skills, with "always use" for tools, prompts and env variables. The setup is for Claude Code only. The template has no AGENTS.md, tool hooks or MCP config.
+  agents: CLAUDE.md routes the agent to the skills, with "always use" for tools, prompts and env variables.
 connections:
   - to: quiz-builder
     label: is the starting point of the
