@@ -11,23 +11,13 @@ interface Props {
 }
 
 const { project, ...rest } = Astro.props;
-
-// Literal class names so Tailwind sees them: the 4px left edge keeps the company color on hover.
-const edges = {
-  playme: "border-l-company-playme hover:border-l-company-playme",
-  sysgears: "border-l-company-sysgears hover:border-l-company-sysgears",
-  side: "border-l-company-side hover:border-l-company-side",
-};
 ---
 
 <li
   {...rest}
   data-project
   data-filter-keys={projectFilterKeys(project).join(" ")}
-  class:list={[
-    "project-row relative flex flex-col gap-2 rounded-md border border-l-4 border-line bg-surface-1 p-4 transition-shadow duration-fast ease-out hover:border-signal-2 hover:shadow-glow-row sm:p-5",
-    edges[project.company],
-  ]}
+  class="project-row relative flex flex-col gap-2 rounded-md border border-line bg-surface-1 p-4 sm:p-5"
 >
   <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
     <h3 class="text-h3">
@@ -58,6 +48,58 @@ const edges = {
 </li>
 
 <style>
+  /* Hover or keyboard focus lights the row's border: a ring from --signal to --signal-2 lies over the
+     hairline, its bright point runs once around the row (--dur-trace) and it stays lit with a soft glow.
+     The mask keeps only the 1px border box of the ring. */
+  .project-row {
+    transition: box-shadow var(--dur-base) var(--ease-out);
+  }
+
+  .project-row::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid transparent;
+    border-radius: inherit;
+    background: conic-gradient(
+        from var(--trace-angle),
+        var(--signal-glow),
+        var(--signal-2) 18%,
+        var(--line-strong) 40% 60%,
+        var(--signal-2) 82%,
+        var(--signal-glow)
+      )
+      border-box;
+    mask:
+      linear-gradient(var(--ink), var(--ink)) padding-box,
+      linear-gradient(var(--ink), var(--ink)) border-box;
+    mask-composite: exclude;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-base) var(--ease-out);
+  }
+
+  .project-row:has(.project-link:focus-visible) {
+    box-shadow: var(--glow-row);
+  }
+
+  .project-row:has(.project-link:focus-visible)::before {
+    opacity: 1;
+    animation: trace-run var(--dur-trace) var(--ease-move);
+  }
+
+  /* Only where hover is real: on touch a tap would leave the ring on after the page comes back. */
+  @media (hover: hover) {
+    .project-row:hover {
+      box-shadow: var(--glow-row);
+    }
+
+    .project-row:hover::before {
+      opacity: 1;
+      animation: trace-run var(--dur-trace) var(--ease-move);
+    }
+  }
+
   /* The whole row is the link: the anchor's box stretches over it, so chips and text need no extra links. */
   .project-link::after {
     content: "";

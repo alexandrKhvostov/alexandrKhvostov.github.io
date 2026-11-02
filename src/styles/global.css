@@ -133,6 +133,24 @@
   animation-play-state: paused;
 }
 
+/* Trace: the bright point of a conic gradient border runs once around its box. Registered so the
+   angle can be animated; without @property support the ring simply shows, without the run. */
+@property --trace-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes trace-run {
+  from {
+    --trace-angle: 0deg;
+  }
+
+  to {
+    --trace-angle: 360deg;
+  }
+}
+
 @keyframes ambient-drift {
   from {
     transform: translate(0, 0);
@@ -214,6 +232,7 @@
     --dur-press: 0ms;
     --dur-move: 0ms;
     --dur-theme: 0ms;
+    --dur-trace: 0ms;
     --press-scale: 1;
     --stagger: 0ms;
     --enter-shift: 0px;

@@ -84,6 +84,7 @@
   --dur-press: 120ms;
   --dur-move: 250ms;
   --dur-theme: 450ms;
+  --dur-trace: 900ms;
   --ease-press: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-move: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
