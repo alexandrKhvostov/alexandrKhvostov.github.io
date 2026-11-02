@@ -1,0 +1,48 @@
+/* Layer 1: raw palettes. The only place color literals may appear.
+   Read by themes/ only; components use the semantic roles. */
+:root {
+  /* sand: cream paper */
+  --p-sand-0: #ffffff;
+  --p-sand-50: #f3f1ea;
+  --p-sand-100: #eae7de;
+  --p-sand-200: #e0dcd1;
+  --p-sand-300: #d6d1c4;
+  --p-sand-400: #bdb6a6;
+  --p-sand-600: #5f584d;
+  --p-sand-900: #23201b;
+
+  /* char: warm charcoal */
+  --p-char-900: #1c1916;
+  --p-char-850: #1f1c19;
+  --p-char-800: #24201c;
+  --p-char-700: #2d2823;
+  --p-char-600: #38322c;
+  --p-char-200: #b3aa9c;
+  --p-char-50: #f2ede4;
+
+  /* amber: the one accent */
+  --p-amber-700: #a84d08;
+  --p-amber-400: #e8a33d;
+  --p-amber-300: #f0b05a;
+
+  /* tones: categories, never fills for buttons */
+  --p-blue-600: #2f5bd3;
+  --p-blue-300: #8fadff;
+  --p-teal-600: #0b7a73;
+  --p-teal-300: #63d3c6;
+  --p-plum-600: #8a3e9e;
+  --p-plum-300: #dba3ea;
+  --p-olive-600: #5e7a1f;
+  --p-olive-300: #b5d46a;
+
+  /* translucent hairlines for the dark theme: char-50 at 10 % and 18 % */
+  --p-char-50-a10: rgb(242 237 228 / 0.1);
+  --p-char-50-a18: rgb(242 237 228 / 0.18);
+
+  /* shadow color for the light theme: sand-900 at 14 % */
+  --p-sand-900-a14: rgb(35 32 27 / 0.14);
+
+  /* tone tint strength (share of the tone color mixed into the surface) */
+  --p-tint-light: 12%;
+  --p-tint-dark: 16%;
+}

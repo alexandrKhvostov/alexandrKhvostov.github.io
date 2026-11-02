@@ -1,0 +1,121 @@
+/* Tailwind is only a way to write semantic tokens in markup.
+   Defaults are reset, so the only colors, sizes, radii and fonts that exist
+   are the roles below. Switching data-theme repaints every utility. */
+@import "tailwindcss" source("../");
+
+/* hover also matches data-demo-state="hover", so /lab can show the state without a pointer. */
+@custom-variant hover {
+  &[data-demo-state="hover"] {
+    @slot;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  /* colors: roles from themes/*.css */
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fill: var(--accent-fill);
+  --color-on-accent: var(--on-accent);
+  --color-code-bg: var(--code-bg);
+  --color-code-ink: var(--code-ink);
+  --color-tone-author: var(--tone-author);
+  --color-tone-runtime: var(--tone-runtime);
+  --color-tone-infra: var(--tone-infra);
+  --color-tone-product: var(--tone-product);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* fonts */
+  --font-*: initial;
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-accent: var(--font-accent);
+
+  /* type scale */
+  --text-*: initial;
+  --text-display: var(--text-display);
+  --text-display--line-height: var(--text-display--line-height);
+  --text-display--letter-spacing: var(--text-display--letter-spacing);
+  --text-display--font-weight: var(--text-display--font-weight);
+  --text-h1: var(--text-h1);
+  --text-h1--line-height: var(--text-h1--line-height);
+  --text-h1--letter-spacing: var(--text-h1--letter-spacing);
+  --text-h1--font-weight: var(--text-h1--font-weight);
+  --text-h2: var(--text-h2);
+  --text-h2--line-height: var(--text-h2--line-height);
+  --text-h2--letter-spacing: var(--text-h2--letter-spacing);
+  --text-h2--font-weight: var(--text-h2--font-weight);
+  --text-h3: var(--text-h3);
+  --text-h3--line-height: var(--text-h3--line-height);
+  --text-h3--letter-spacing: var(--text-h3--letter-spacing);
+  --text-h3--font-weight: var(--text-h3--font-weight);
+  --text-lead: var(--text-lead);
+  --text-lead--line-height: var(--text-lead--line-height);
+  --text-lead--letter-spacing: var(--text-lead--letter-spacing);
+  --text-lead--font-weight: var(--text-lead--font-weight);
+  --text-body: var(--text-body);
+  --text-body--line-height: var(--text-body--line-height);
+  --text-body--letter-spacing: var(--text-body--letter-spacing);
+  --text-body--font-weight: var(--text-body--font-weight);
+  --text-small: var(--text-small);
+  --text-small--line-height: var(--text-small--line-height);
+  --text-small--letter-spacing: var(--text-small--letter-spacing);
+  --text-small--font-weight: var(--text-small--font-weight);
+  --text-eyebrow: var(--text-eyebrow);
+  --text-eyebrow--line-height: var(--text-eyebrow--line-height);
+  --text-eyebrow--letter-spacing: var(--text-eyebrow--letter-spacing);
+  --text-eyebrow--font-weight: var(--text-eyebrow--font-weight);
+
+  /* radius */
+  --radius-*: initial;
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  /* space: p-4, gap-5 ... follow the scale in tokens/scale.css */
+  --spacing-*: initial;
+  --spacing-0: var(--space-0);
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-7: var(--space-7);
+  --spacing-8: var(--space-8);
+  --spacing-9: var(--space-9);
+  --spacing-gutter: var(--gutter);
+  --spacing-section: var(--section-gap);
+
+  /* widths: max-w-page, max-w-prose */
+  --container-*: initial;
+  --container-page: var(--page-width);
+  --container-prose: var(--prose-width);
+
+  /* depth */
+  --shadow-*: initial;
+  --shadow-pop: var(--shadow-pop);
+
+  /* motion */
+  --ease-*: initial;
+  --ease-out: var(--ease-out);
+  --transition-duration-*: initial;
+  --transition-duration-fast: var(--dur-fast);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-slow: var(--dur-slow);
+}

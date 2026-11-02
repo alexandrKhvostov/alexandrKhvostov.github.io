@@ -1,0 +1,105 @@
+@import "./tokens/primitives.css";
+@import "./tokens/scale.css";
+@import "./fonts.css";
+@import "./themes/warm-light.css";
+@import "./themes/warm-dark.css";
+@import "./tailwind.css";
+
+@layer base {
+  html {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    scroll-padding-top: var(--space-8);
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--bg);
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      color var(--dur-base) var(--ease-out);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: var(--accent);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  :not(pre) > code {
+    background-color: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 0.1em 0.35em;
+    font-size: 0.9em;
+  }
+
+  ::selection {
+    background-color: var(--accent-fill);
+    color: var(--on-accent);
+  }
+
+  :focus-visible,
+  [data-demo-state="focus"] {
+    outline: var(--ring-width) solid var(--accent);
+    outline-offset: var(--ring-offset);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --reveal-shift: 0px;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+  }
+}

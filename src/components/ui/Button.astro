@@ -1,0 +1,60 @@
+---
+interface Props {
+  variant?: "primary" | "secondary" | "quiet";
+  href?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  class?: string;
+  [attr: string]: unknown;
+}
+
+const {
+  variant = "secondary",
+  href,
+  type = "button",
+  disabled = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const variants = {
+  primary: "btn-primary bg-ink text-bg",
+  secondary: "border border-line-strong bg-transparent text-ink hover:bg-surface-2 active:bg-surface-3",
+  quiet: "bg-transparent text-muted hover:text-ink",
+};
+
+const classes = [
+  "inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-small font-medium no-underline transition-colors duration-fast ease-out",
+  variants[variant],
+  disabled && "pointer-events-none opacity-50",
+  className,
+];
+---
+
+{href ? (
+  <a
+    href={href}
+    class:list={classes}
+    aria-disabled={disabled ? "true" : undefined}
+    tabindex={disabled ? -1 : undefined}
+    {...rest}
+  >
+    <slot />
+  </a>
+) : (
+  <button type={type} disabled={disabled} class:list={classes} {...rest}>
+    <slot />
+  </button>
+)}
+
+<style>
+  /* Component token: how far hover moves the fill toward the canvas. */
+  .btn-primary {
+    --btn-hover-mix: 8%;
+  }
+
+  .btn-primary:hover:not(:disabled),
+  .btn-primary[data-demo-state="hover"] {
+    background-color: color-mix(in oklab, var(--ink), var(--bg) var(--btn-hover-mix));
+  }
+</style>

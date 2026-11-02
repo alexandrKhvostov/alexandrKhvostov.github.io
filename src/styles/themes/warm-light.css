@@ -1,0 +1,25 @@
+:root[data-theme="warm-light"] {
+  color-scheme: light;
+
+  --bg: var(--p-sand-50);
+  --surface-1: var(--p-sand-0);
+  --surface-2: var(--p-sand-100);
+  --surface-3: var(--p-sand-200);
+  --line: var(--p-sand-300);
+  --line-strong: var(--p-sand-400);
+  --ink: var(--p-sand-900);
+  --muted: var(--p-sand-600);
+  --accent: var(--p-amber-700);
+  --accent-fill: var(--p-amber-400);
+  --on-accent: var(--p-sand-900);
+  --code-bg: var(--p-char-850);
+  --code-ink: var(--p-char-50);
+
+  --tone-author: var(--p-blue-600);
+  --tone-runtime: var(--p-teal-600);
+  --tone-infra: var(--p-plum-600);
+  --tone-product: var(--p-olive-600);
+  --tone-tint: var(--p-tint-light);
+
+  --shadow-pop: var(--shadow-pop-shape) var(--p-sand-900-a14);
+}

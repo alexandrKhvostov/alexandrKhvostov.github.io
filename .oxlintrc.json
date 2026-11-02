@@ -1,0 +1,247 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off",
+    "perf": "warn",
+    "style": "off",
+    "restriction": "off"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "ignorePatterns": ["dist/**", ".astro/**", "node_modules/**", "public/**", "research/**", "src/env.d.ts"],
+  "rules": {
+    "eslint/eqeqeq": "error",
+    "eslint/no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error"]
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "import/no-cycle": "error",
+    "import/no-self-import": "error",
+    "import/no-duplicates": "error",
+    "unicorn/filename-case": "off",
+    "import/no-unassigned-import": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.astro"],
+      "rules": {
+        "eslint/no-unused-vars": "off",
+        "typescript/consistent-type-imports": "off",
+        "eslint/no-undef": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.mjs", "astro.config.mjs"],
+      "env": {
+        "node": true,
+        "browser": false
+      },
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              },
+              {
+                "group": [
+                  "@/components/blocks/**",
+                  "@/components/sections/**",
+                  "**/components/blocks/**",
+                  "**/components/sections/**"
+                ],
+                "message": "ui is the bottom layer: it cannot import blocks or sections."
+              },
+              {
+                "group": [
+                  "@/pages/**",
+                  "~/pages/**",
+                  "**/pages/**",
+                  "@/layouts/**",
+                  "~/layouts/**",
+                  "**/layouts/**"
+                ],
+                "message": "Components must not depend on layouts or pages."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/blocks/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              },
+              {
+                "group": ["@/components/sections/**", "**/components/sections/**"],
+                "message": "blocks cannot import sections."
+              },
+              {
+                "group": [
+                  "@/pages/**",
+                  "~/pages/**",
+                  "**/pages/**",
+                  "@/layouts/**",
+                  "~/layouts/**",
+                  "**/layouts/**"
+                ],
+                "message": "Components must not depend on layouts or pages."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/sections/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              },
+              {
+                "group": [
+                  "@/pages/**",
+                  "~/pages/**",
+                  "**/pages/**",
+                  "@/layouts/**",
+                  "~/layouts/**",
+                  "**/layouts/**"
+                ],
+                "message": "Components must not depend on layouts or pages."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/layouts/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              },
+              {
+                "group": ["@/pages/**", "~/pages/**", "**/pages/**"],
+                "message": "Layouts must not depend on pages."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/content/**", "src/content.config.ts", "src/lib/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              },
+              {
+                "group": [
+                  "@/components/**",
+                  "~/components/**",
+                  "**/components/**",
+                  "*.astro",
+                  "**/*.astro",
+                  "@/pages/**",
+                  "~/pages/**",
+                  "**/pages/**",
+                  "@/layouts/**",
+                  "~/layouts/**",
+                  "**/layouts/**"
+                ],
+                "message": "content and lib know nothing about UI."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/scripts/**", "src/styles/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              },
+              {
+                "group": [
+                  "@/components/**",
+                  "~/components/**",
+                  "**/components/**",
+                  "*.astro",
+                  "**/*.astro",
+                  "@/pages/**",
+                  "~/pages/**",
+                  "**/pages/**",
+                  "@/layouts/**",
+                  "~/layouts/**",
+                  "**/layouts/**"
+                ],
+                "message": "Scripts and styles must not import components, layouts or pages; use data-* attributes."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/pages/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Import across folders through the @/ alias; the layer rules match import text."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

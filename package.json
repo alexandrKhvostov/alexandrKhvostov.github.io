@@ -1,0 +1,37 @@
+{
+  "name": "alexandr-khvostov",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.18.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "oxlint --deny-warnings",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "astro check",
+    "check:tokens": "node scripts/check-tokens.mjs",
+    "test": "node --test \"scripts/**/*.test.mjs\" \"src/lib/**/*.test.ts\"",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm check:tokens && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.4.4",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "oxlint": "1.90.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.2",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "typescript": "6.0.3"
+  }
+}

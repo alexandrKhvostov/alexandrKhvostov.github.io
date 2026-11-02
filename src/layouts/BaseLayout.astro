@@ -1,0 +1,65 @@
+---
+import "@/styles/global.css";
+import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
+import { defaultThemeForScheme, themes, themeStorageKey } from "@/styles/themes/index";
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Keeps the page out of search results (the lab). */
+  noindex?: boolean;
+}
+
+const {
+  title = "Alexandr Khvostov",
+  description = "Architecture notes, work in progress.",
+  noindex = false,
+} = Astro.props;
+
+const themeIds = themes.map((theme) => theme.id);
+const home = import.meta.env.BASE_URL;
+---
+
+<!doctype html>
+<html lang="en" data-theme={defaultThemeForScheme.light}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" href="data:," />
+    <script
+      is:inline
+      define:vars={{ themeIds, storageKey: themeStorageKey, bySystemScheme: defaultThemeForScheme }}
+    >
+      // Sets data-theme before first paint: the stored choice, else the system scheme.
+      var theme;
+      try {
+        var stored = localStorage.getItem(storageKey);
+        if (themeIds.indexOf(stored) !== -1) theme = stored;
+      } catch (error) {
+        // Storage blocked: fall through to the system scheme.
+      }
+      if (!theme) {
+        var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        theme = bySystemScheme[dark ? "dark" : "light"];
+      }
+      document.documentElement.dataset.theme = theme;
+    </script>
+  </head>
+  <body class="bg-bg text-ink">
+    <header class="sticky top-0 z-10 border-b border-line bg-bg">
+      <div class="mx-auto flex w-full max-w-page items-center justify-between px-gutter py-3">
+        <a href={home} class="font-medium text-ink no-underline">
+          Alexandr Khvostov
+        </a>
+        <ThemeSwitch />
+      </div>
+    </header>
+    <main class="mx-auto w-full max-w-page px-gutter">
+      <slot />
+    </main>
+  </body>
+</html>

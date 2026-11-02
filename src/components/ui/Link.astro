@@ -1,0 +1,23 @@
+---
+interface Props {
+  href: string;
+  /** Opens a site outside this one: adds rel for safety. */
+  external?: boolean;
+  class?: string;
+  [attr: string]: unknown;
+}
+
+const { href, external = false, class: className, ...rest } = Astro.props;
+---
+
+<a
+  href={href}
+  rel={external ? "noopener noreferrer" : undefined}
+  class:list={[
+    "rounded-sm text-accent underline decoration-1 underline-offset-3 transition-colors duration-fast ease-out hover:decoration-2",
+    className,
+  ]}
+  {...rest}
+>
+  <slot />
+</a>

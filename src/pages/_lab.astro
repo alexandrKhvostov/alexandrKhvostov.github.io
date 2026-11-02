@@ -1,0 +1,290 @@
+---
+import Badge from "@/components/ui/Badge.astro";
+import Button from "@/components/ui/Button.astro";
+import Link from "@/components/ui/Link.astro";
+import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  colorRoles,
+  fontRoles,
+  motionRoles,
+  otherThemeRoles,
+  radiusRoles,
+  spaceRoles,
+  typeRoles,
+} from "@/styles/roles";
+import { themes } from "@/styles/themes/index";
+
+// Served at /lab by the lab-dev-only integration in astro.config.mjs. The leading underscore keeps
+// Astro's file router from building it, so `astro build` ships neither the page nor its script.
+
+const groups = ["canvas", "line", "text", "accent", "code", "tone"] as const;
+const variants = ["primary", "secondary", "quiet"] as const;
+const states = [
+  { id: "default", demo: undefined, disabled: false },
+  { id: "hover", demo: "hover", disabled: false },
+  { id: "focus", demo: "focus", disabled: false },
+  { id: "disabled", demo: undefined, disabled: true },
+] as const;
+const tones = ["author", "runtime", "infra", "product"] as const;
+---
+
+<BaseLayout title="Lab" noindex>
+  <div class="flex flex-col gap-section py-7">
+    <header class="flex flex-col gap-3">
+      <p class="font-mono text-eyebrow text-muted uppercase">Dev only, not built, not linked</p>
+      <h1 class="text-h1">Lab</h1>
+      <p class="max-w-prose text-muted">
+        Every token and component in every state. Change a color with the pickers, copy the result as CSS,
+        paste it into the theme file.
+      </p>
+    </header>
+
+    <section class="flex flex-col gap-4" aria-labelledby="lab-themes">
+      <h2 id="lab-themes" class="text-h2">
+        Theme
+      </h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <ThemeSwitch />
+        {themes.map((theme) => (
+          <Button variant="secondary" data-lab-theme={theme.id}>
+            {theme.label}
+          </Button>
+        ))}
+      </div>
+      <p class="text-small text-muted">
+        Switching a theme clears the live edits below. Roles a theme also sets: {otherThemeRoles.join(", ")}.
+      </p>
+    </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-colors">
+      <h2 id="lab-colors" class="text-h2">
+        Color roles
+      </h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <Button variant="primary" data-lab-copy>
+          Copy as CSS
+        </Button>
+        <Button variant="secondary" data-lab-reset>
+          Reset edits
+        </Button>
+        <span class="text-small text-muted" data-lab-status role="status"></span>
+      </div>
+      <pre
+        class="overflow-x-auto rounded-md bg-code-bg p-4 font-mono text-small text-code-ink"
+        data-lab-output
+      >No edits yet.</pre>
+      {groups.map((group) => (
+        <div class="flex flex-col gap-3">
+          <h3 class="font-mono text-eyebrow text-muted uppercase">{group}</h3>
+          <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {colorRoles
+              .filter((role) => role.group === group)
+              .map((role) => (
+                <li
+                  class="flex items-center gap-3 rounded-md border border-line bg-surface-1 p-3"
+                  data-lab-role={role.name}
+                >
+                  <span class:list={["size-7 shrink-0 rounded-sm border border-line-strong", role.swatch]} />
+                  <span class="flex min-w-0 flex-1 flex-col">
+                    <code class="truncate">--{role.name}</code>
+                    <span class="truncate text-small text-muted">{role.use}</span>
+                    <span class="truncate font-mono text-eyebrow text-muted" data-lab-value />
+                  </span>
+                  <input
+                    type="color"
+                    aria-label={`Edit --${role.name}`}
+                    class="h-5 w-7 shrink-0 rounded-sm border border-line-strong bg-transparent p-0"
+                    data-lab-input
+                  />
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+      <div class="flex flex-col gap-3">
+        <h3 class="font-mono text-eyebrow text-muted uppercase">Tone backgrounds</h3>
+        <p class="text-small text-muted">
+          Tint = tone mixed into surface-1 by <code>--tone-tint</code>; the rail and dot use the tone itself.
+        </p>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="author">
+            <span class="tone-demo-dot"></span> author
+          </div>
+          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="runtime">
+            <span class="tone-demo-dot"></span> runtime
+          </div>
+          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="infra">
+            <span class="tone-demo-dot"></span> infra
+          </div>
+          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="product">
+            <span class="tone-demo-dot"></span> product
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-type">
+      <h2 id="lab-type" class="text-h2">
+        Type
+      </h2>
+      <ul class="flex flex-col gap-4">
+        {typeRoles.map((role) => (
+          <li class="flex flex-col gap-1 border-b border-line pb-4">
+            <code class="text-small text-muted">
+              --text-{role.name} · {role.use}
+            </code>
+            <p class={role.cls}>The map is computed from the data</p>
+          </li>
+        ))}
+      </ul>
+      <ul class="flex flex-col gap-3">
+        {fontRoles.map((role) => (
+          <li class="flex flex-col gap-1">
+            <code class="text-small text-muted">
+              --font-{role.name} · {role.use}
+            </code>
+            <p class:list={[role.cls, role.name === "accent" && "italic", "text-h3"]}>
+              Architecture notes 0123456789
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p class="font-mono text-eyebrow text-muted uppercase">Eyebrow: mono, uppercase</p>
+    </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-shape">
+      <h2 id="lab-shape" class="text-h2">
+        Radius, space, depth, motion
+      </h2>
+      <ul class="flex flex-wrap gap-4">
+        {radiusRoles.map((role) => (
+          <li class="flex flex-col gap-2">
+            <span class:list={["block h-7 w-8 border border-line-strong bg-surface-2", role.cls]} />
+            <code class="text-small text-muted">--radius-{role.name}</code>
+          </li>
+        ))}
+      </ul>
+      <ul class="flex flex-col gap-2">
+        {spaceRoles.map((role) => (
+          <li class="flex items-center gap-3">
+            <code class="w-9 shrink-0 text-small text-muted">--space-{role.step}</code>
+            <span class:list={["block h-3 rounded-sm bg-accent-fill", role.cls]} />
+          </li>
+        ))}
+      </ul>
+      <div class="flex flex-wrap gap-4">
+        <div class="rounded-md border border-line bg-surface-1 p-5 shadow-pop">
+          <code class="text-small text-muted">--shadow-pop</code>
+        </div>
+        {motionRoles.map((role) => (
+          <div class="flex flex-col gap-2">
+            <button
+              type="button"
+              class:list={[
+                "rounded-sm border border-line-strong px-3 py-2 text-small transition-transform ease-out hover:translate-x-5",
+                role.cls,
+              ]}
+            >
+              hover me
+            </button>
+            <code class="text-small text-muted">--dur-{role.name}</code>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-components">
+      <h2 id="lab-components" class="text-h2">
+        Components
+      </h2>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Button</h3>
+        {variants.map((variant) => (
+          <div class="flex flex-wrap items-center gap-3">
+            <code class="w-9 shrink-0 text-small text-muted">{variant}</code>
+            {states.map((state) => (
+              <Button variant={variant} disabled={state.disabled} data-demo-state={state.demo}>
+                {state.id}
+              </Button>
+            ))}
+            <Button variant={variant} href="#lab-components">
+              as link
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Badge</h3>
+        <div class="flex flex-wrap items-center gap-3">
+          <Badge>Astro</Badge>
+          <Badge>TypeScript</Badge>
+          {tones.map((tone) => (
+            <Badge tone={tone}>{tone}</Badge>
+          ))}
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Link</h3>
+        <p class="flex flex-wrap items-center gap-4">
+          <Link href="#lab-components">default</Link>
+          <Link href="#lab-components" data-demo-state="hover">
+            hover
+          </Link>
+          <Link href="#lab-components" data-demo-state="focus">
+            focus
+          </Link>
+          <Link href="https://astro.build" external>
+            external
+          </Link>
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Theme switch</h3>
+        <div class="flex flex-wrap items-center gap-3">
+          <ThemeSwitch />
+          <ThemeSwitch data-demo-state="hover" />
+          <ThemeSwitch data-demo-state="focus" />
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Lab-only component token: tone tint as DESIGN.md describes it. */
+  .tone-demo {
+    --tone: var(--tone-author);
+    background-color: color-mix(in oklab, var(--tone) var(--tone-tint), var(--surface-1));
+  }
+
+  .tone-demo[data-tone="runtime"] {
+    --tone: var(--tone-runtime);
+  }
+
+  .tone-demo[data-tone="infra"] {
+    --tone: var(--tone-infra);
+  }
+
+  .tone-demo[data-tone="product"] {
+    --tone: var(--tone-product);
+  }
+
+  .tone-demo-dot {
+    display: inline-block;
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--tone);
+  }
+</style>
+
+<script>
+  import { initLab } from "@/scripts/lab";
+
+  initLab();
+</script>

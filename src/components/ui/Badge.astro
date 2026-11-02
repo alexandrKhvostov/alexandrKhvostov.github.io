@@ -1,0 +1,28 @@
+---
+interface Props {
+  /** Category dot; tones are categories, never fills. */
+  tone?: "author" | "runtime" | "infra" | "product";
+  class?: string;
+  [attr: string]: unknown;
+}
+
+const { tone, class: className, ...rest } = Astro.props;
+
+const dots = {
+  author: "bg-tone-author",
+  runtime: "bg-tone-runtime",
+  infra: "bg-tone-infra",
+  product: "bg-tone-product",
+};
+---
+
+<span
+  {...rest}
+  class:list={[
+    "inline-flex items-center gap-2 rounded-sm border border-line px-2 py-1 font-mono text-eyebrow text-muted",
+    className,
+  ]}
+>
+  {tone && <span aria-hidden="true" class:list={["size-2 rounded-pill", dots[tone]]} />}
+  <slot />
+</span>

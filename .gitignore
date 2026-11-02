@@ -1,0 +1,6 @@
+# Research notes may hold internal details; the site repo is public.
+research/
+.DS_Store
+node_modules/
+dist/
+.astro/

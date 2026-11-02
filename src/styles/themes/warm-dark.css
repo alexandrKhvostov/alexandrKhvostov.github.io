@@ -1,0 +1,25 @@
+:root[data-theme="warm-dark"] {
+  color-scheme: dark;
+
+  --bg: var(--p-char-900);
+  --surface-1: var(--p-char-800);
+  --surface-2: var(--p-char-700);
+  --surface-3: var(--p-char-600);
+  --line: var(--p-char-50-a10);
+  --line-strong: var(--p-char-50-a18);
+  --ink: var(--p-char-50);
+  --muted: var(--p-char-200);
+  --accent: var(--p-amber-300);
+  --accent-fill: var(--p-amber-300);
+  --on-accent: var(--p-char-900);
+  --code-bg: var(--p-char-800);
+  --code-ink: var(--p-char-50);
+
+  --tone-author: var(--p-blue-300);
+  --tone-runtime: var(--p-teal-300);
+  --tone-infra: var(--p-plum-300);
+  --tone-product: var(--p-olive-300);
+  --tone-tint: var(--p-tint-dark);
+
+  --shadow-pop: none;
+}
