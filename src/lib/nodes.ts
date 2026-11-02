@@ -20,6 +20,8 @@ export const nodes = {
   "mcp-template": { label: "MCP server template", kind: "project" },
   "frontend-template": { label: "Frontend template", kind: "project" },
   "family-budget": { label: "Family budget", kind: "project" },
+  "growio-app": { label: "Growio app", kind: "project" },
+  "growio-cms": { label: "Growio CMS", kind: "project" },
   "ai-clients": { label: "AI clients", kind: "client" },
   s3: { label: "S3 bucket", kind: "storage" },
   cloudfront: { label: "CloudFront", kind: "cdn" },

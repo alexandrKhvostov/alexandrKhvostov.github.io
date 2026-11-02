@@ -1,0 +1,185 @@
+title: Growio app
+company: playme
+period: 2025 to 2026
+order: 10
+role: "Senior Full Stack Developer / Engineering Lead. Set up the architecture and the build and deploy pipeline, reviewed the code and set the main tasks."
+disciplines: [mobile]
+aiAgents: false
+summary: iOS and Android financial literacy course app with lessons, quizzes and subscriptions managed on the web, shipped through Expo builds and over-the-air updates.
+glance:
+  - value: "20"
+    label: route files, in three groups plus standalone routes
+  - value: "20"
+    label: API operations used
+  - value: "5"
+    label: lesson node types the app renders
+  - value: "3"
+    label: release workflows, dev, stage and prod
+stack:
+  - TypeScript
+  - Expo SDK 57
+  - React Native
+  - expo-router
+  - TanStack Query
+  - openapi-fetch
+  - Zustand
+  - NativeWind
+  - gluestack-ui
+  - React Hook Form
+  - Zod
+  - react-i18next
+  - MMKV
+  - Sentry
+  - Amplitude
+  - EAS
+  - GitHub Actions
+  - Jest
+overview:
+  - Growio is a financial literacy app. A new user signs up, answers a short self-assessment in onboarding, gets a personal plan and then works through a course of units, chapters and lessons. A lesson is a sequence of text, image, video and question blocks. The course content comes from the backend, where editors manage it in the Growio CMS, and the app renders the course, the lessons and the quiz it sends.
+  - The app is Expo and React Native with file-based routes. Calls go through typed hooks built on openapi-fetch, and the types are generated from the backend's Swagger on every install. Server state sits in TanStack Query and shared client state in Zustand. Styling is NativeWind with gluestack-ui components. Sign-in tokens are kept in the secure store.
+  - Subscriptions are not bought in the app. The profile screen shows the plan and its status from the API, and renew and cancel open the product's web app in the browser. Builds go through EAS, and a GitHub Actions check decides between a native build and an over-the-air update.
+diagram:
+  type: pipeline
+  caption: One lesson, from the home path to the refreshed progress.
+  nodes:
+    - id: home
+      label: Home path
+    - id: lesson
+      label: Lesson screen
+    - id: blocks
+      label: Blocks
+    - id: answers
+      label: Answers
+    - id: progress
+      label: Progress update
+  steps:
+    - from: home
+      to: lesson
+      label: Open the lesson
+      note: Home loads the first course with its details and progress. A unit stays locked while the unit before it is under 100 percent. A lesson card pushes the lesson route with the course, unit and chapter ids as params.
+    - from: lesson
+      to: blocks
+      label: Sort and reveal
+      note: The lesson query returns blocks of typed nodes. Blocks and nodes are sorted by sortOrder, and only the blocks up to the current index are shown.
+    - from: blocks
+      to: answers
+      label: Render by node type
+      note: Type guards on the payload pick the component, for text, image, video, true/false and single-choice nodes. A node of a type the app does not know renders nothing. A question checks the answer against the isCorrect flag in the payload.
+    - from: answers
+      to: blocks
+      label: Continue
+      note: The Continue button appears only after every question in the block is answered. It reveals the next block and scrolls to the end. Answers stay in screen state, so quitting midway sends no progress.
+    - from: blocks
+      to: progress
+      label: Last block
+      note: On the last block one PUT sends every block as completed, with the answers attached. Amplitude gets a lesson end event with status 1.
+    - from: progress
+      to: home
+      label: Refresh
+      note: On success the course detail and progress queries are invalidated, and the route is replaced by the lesson-end screen. Home then shows the new progress.
+structure:
+  tree: |
+    src/app/            expo-router routes and layout guards
+    src/screens/        one screen per route
+    src/widgets/        error boundary, global toast
+    src/features/       business actions: lesson, onboarding, auth forms, profile
+    src/components/     gluestack-ui in ui/, custom parts in common/
+    src/services/       API client, API hooks per entity, Amplitude, Sentry, Facebook
+    src/store/          shared Zustand stores
+    src/lib/            MMKV and secure-store wrappers, query client, i18n
+    src/theme/          color, type and spacing tokens
+    src/locales/en/     translation files grouped by screen or feature
+    .github/workflows/  release-dev, release-stage, release-prod
+    .github/actions/    composite actions, among them detect-build-type
+    .docs/              architecture, API, git flow and theme guides
+  notes:
+    - path: src/services/api-hooks/<entity>/
+      why: "Eight entities, each with keys, queries, mutations and types files, and a query-key factory is required. Components are not meant to call fetch, so cache invalidation lives next to the call. Documented in CLAUDE.md and reviewed by CodeRabbit."
+    - path: src/services/api/
+      why: The openapi-fetch client with two middlewares. One sets the base URL from the selected backend, the other adds the bearer token and, on a 401, refreshes it and retries. The types file src/types/api-schema.ts is gitignored and regenerated by the prepare script.
+    - path: src/app/ and src/screens/
+      why: Route files re-export a screen, and each screen composes widgets and features and runs the main query. Layouts do the route guards by returning a redirect, one for guests and one for signed-in users.
+    - path: src/features/
+      why: One folder per business action, with its forms, mutations and local state. The layering is a mix of layered design and Feature-Sliced Design. A short test for where code belongs is in .docs/PROJECT_ARCHITECTURE.md, and barrel files are not allowed in app, screens and features.
+    - path: src/theme/ and tailwind.config.ts
+      why: Colors are defined once as RGB values, mapped to CSS variables in the gluestack provider config and exposed as Tailwind classes. The theme store keeps light, dark or system mode in MMKV.
+    - path: .github/actions/detect-build-type/
+      why: The composite action that decides between a native build, an update and an error. The dev, stage and prod workflows call it before building.
+tools:
+  title: Screens
+  intro: 20 route files in the groups auth, onboarding and tabs, plus standalone routes.
+  groups:
+    - title: First launch
+      items:
+        - name: Welcome
+          does: An illustration with two buttons, one that starts sign-up and one for people who have an account.
+        - name: Sign-up and login
+          does: Forms built with React Hook Form and checked with Zod. Password recovery is three screens, for the email, the code and the new password.
+        - name: Onboarding
+          does: A self-assessment fetched from the backend by key, three questions per page, answered with sliders. A progress screen then prefetches the personal plan, and the plan screen lists its chapters.
+    - title: Learning
+      items:
+        - name: Home
+          does: The course path of lessons, drawn as completed, current or locked, with a start marker on the current one and a button that jumps to the next unit.
+        - name: Lesson
+          does: Blocks appear one at a time with text, images, video, true/false and single-choice questions. It has an exit confirmation, a video rating and an issue report.
+        - name: Lesson end
+          does: A completion screen after progress is saved, with a button back to the home path.
+    - title: Account
+      items:
+        - name: Profile
+          does: The subscription plan, its status and billing period, renew and cancel through the web app, support email, legal links and log out.
+decisions:
+  - kind: decision
+    title: API types only from the generated schema
+    why: One source of truth for the shape of the backend. The prepare script runs openapi-typescript against the backend's Swagger on every install, and the file is gitignored, so nobody edits or commits it by hand. CI installs with the dev API address passed in, so a build regenerates it too. CLAUDE.md forbids hand-written API models, and type-check runs in pre-commit, so a changed endpoint breaks the code that uses it.
+  - kind: decision
+    title: The backend follows the update channel
+    why: The EAS profiles set the channel and EXPO_PUBLIC_ENV. getDefaultBackend maps the channels development, preview and production to the dev, stage and prod backends, so one codebase serves every environment with no code change, with a separate backend per update channel. In builds that are not stage or production, a dev menu switches the backend.
+  - kind: decision
+    title: Native builds and updates split by NATIVE_VERSION
+    why: NATIVE_VERSION in app.config.ts feeds runtimeVersion, the iOS build number and the Android version code. A composite action compares app.config.ts, eas.json, package.json and the lockfile with the last build tag of that environment. A bump means a native build, no native change means an EAS Update, and a native change without a bump fails the run. A production build is submitted to TestFlight and to Google Play internal testing.
+  - kind: decision
+    title: One token refresh at a time
+    why: A 401 starts a refresh inside an async-mutex lock, and each waiting request reads the refresh token only after it gets the lock, so a rotated token is not sent twice. A success saves both tokens and retries the request. A failed or malformed refresh logs the user out, and logout cancels the lock. Tokens are in the secure store, and settings are in MMKV.
+  - kind: decision
+    title: Lesson content is a typed payload from the backend
+    why: A lesson is blocks of nodes sorted by sortOrder. The app picks a component by type guard and renders nothing for a type it does not know. Answer correctness comes from the options in the payload, and progress goes in one request at the end. The app renders the lessons and questions the backend sends, so changing their content does not touch the app code.
+  - kind: decision
+    title: Each kind of code has one place
+    why: A screen maps to one route and runs the main query. A feature owns a business action with its mutations and local state. A widget composes features, and components are plain UI. A feature's store cannot be imported from outside it. The rules and the test for where code belongs are documented in CLAUDE.md and .docs, and CodeRabbit reads them in reviews.
+rules:
+  items:
+    - rule: Components never call fetch, and calls go through per-entity hooks with a key factory
+      why: It keeps cache invalidation next to the call.
+      heldBy:
+        - documented in CLAUDE.md and .docs
+        - CodeRabbit review instructions
+    - rule: A native change needs a NATIVE_VERSION bump
+      why: An update must never reach a binary with different native code.
+      heldBy:
+        - CI check detect-build-type in the dev, stage and prod workflows
+        - runtimeVersion equals NATIVE_VERSION
+    - rule: Tokens go to the secure store and settings go to MMKV
+      why: Credentials must not sit in plain storage.
+      heldBy:
+        - authStorage writes only through the secure-store wrapper
+        - CodeRabbit review instructions
+    - rule: Lint, types, tests and commit messages are checked by git hooks on commit and push
+      why: Every contributor gets the same checks before code leaves the machine.
+      heldBy:
+        - Husky pre-commit, commit-msg and pre-push
+        - ESLint with no allowed warnings and no console calls
+        - commitlint
+    - rule: User-facing text lives in translation files grouped by screen or feature
+      why: Copy changes stay out of components.
+      heldBy:
+        - documented in CLAUDE.md
+        - CodeRabbit flags hardcoded strings in JSX
+  agents: CLAUDE.md holds the commands, the layer rules with a code sample for the per-entity hooks, the component classification, the commit rules and a seven-step checklist for adding an environment variable. CodeRabbit reads it and the .docs folder as review guidelines. Two project skills, commit and open-pr, write a Conventional Commit and open a pull request from the template. The open-pr skill runs only when a person starts it and has a narrow list of allowed tools.
+connections:
+  - to: product-backends
+    label: calls the Growio REST API in the
+  - to: growio-cms
+    label: shows the courses edited in the
+links: []
