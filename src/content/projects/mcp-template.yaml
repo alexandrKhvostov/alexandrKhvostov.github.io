@@ -1,0 +1,171 @@
+title: MCP template
+company: playme
+period: "2026"
+order: 10
+role: Designed and built the template and set it up for agent-driven work.
+disciplines: [backend]
+aiAgents: true
+summary: Starter repo for remote MCP servers with a shared core, pluggable auth, agent skills and a deploy pipeline, ready to run once initialized.
+glance:
+  - value: "9"
+    label: agent skills
+  - value: "2"
+    label: auth modes, central JWT or shared secret
+  - value: "3"
+    label: deploy environments, dev, stage and prod
+stack:
+  - TypeScript
+  - Node.js 24
+  - Express 5
+  - MCP SDK
+  - Zod
+  - jose
+  - Biome
+  - Vitest
+  - Docker
+  - Helm
+  - GitHub Actions
+overview:
+  - PlayMe runs several MCP servers that wrap a REST API as tools for Claude, and each needs the same shell, made of an HTTP endpoint, a health check, sign-in, error handling, a container, a Helm chart and a deploy pipeline. The template is a GitHub template repo for a stateless MCP server that ships all of it. A backend developer replaces the domain folder and keeps the core.
+  - The core folder holds the Express app with its MCP and health routes, env parsing, two auth strategies, and wrappers that turn thrown errors into MCP error results and prefix tool names. Auth defaults to RS256 tokens from the central auth service, checked against its public keys. A shared-secret header is the alternative. Each request builds a new MCP server, so nothing is kept between requests.
+  - The template started inside the media storage MCP, where the core and domain split was made. The quiz builder started from it, and later improvements were carried back into the template. Servers on the default auth mode verify tokens from the auth service.
+diagram:
+  type: pipeline
+  caption: How a new MCP server goes from the template to a deployed service, with the skill or check behind each step.
+  nodes:
+    - id: template
+      label: Template repo
+    - id: skills
+      label: Agent skills
+    - id: env
+      label: Env schema
+    - id: auth
+      label: Auth strategy
+    - id: tools
+      label: Tools
+    - id: deploy
+      label: Deploy
+  steps:
+    - from: template
+      to: skills
+      label: Create repo, run init
+      note: A new repo is created from the GitHub template and the init skill is run with the service name. The skill asks for display name, description, image repository, namespace, service account and auth mode.
+    - from: skills
+      to: env
+      label: Rename and configure
+      note: The skill derives the names, hosts and image path and shows them for confirmation. It then edits the manifest, package, chart, both workflows, the three values files and the entry point. It copies the example env file to .env with a random secret and runs install, typecheck, Biome and build.
+    - from: env
+      to: auth
+      label: Validate env, pick strategy
+      note: The Zod env schema runs at boot and picks its variant by whether the auth service URL is set. A bad config exits the process with numbered errors. The entry point then builds the JWT strategy, or the shared-secret one when the URL is absent.
+    - from: skills
+      to: tools
+      label: Add tools with /add-tool
+      note: The skill reads the existing client and prefix, writes the tool with Zod schemas, an output schema and annotations by tool type, and registers it. Then it runs typecheck and Biome.
+    - from: auth
+      to: tools
+      label: Verify, then run tool
+      note: On each call to the MCP endpoint, Helmet and the auth middleware run first and set the request context. A new MCP server is built for the request, the tools are registered, and the call is handled.
+    - from: tools
+      to: deploy
+      label: Build and deploy
+      note: A manual workflow builds the image, pushes it to the registry and runs a Helm upgrade with a rollback on failure. Secrets and config are set from GitHub Environments, and Slack gets a notice either way. The chart's ingress carries an IP allow-list for Anthropic's ranges.
+    - from: skills
+      to: deploy
+      label: Release with skills
+      note: Stage-release, pre-release and release run the git flow as scripts. They bump the version, trigger the stage deploy, open the PRs and tag. A version tag starts the production workflow.
+structure:
+  tree: |
+    src/index.ts            wires core and domain, picks the auth strategy
+    src/core/server.ts      Express factory, MCP and health routes, shutdown
+    src/core/env.ts         Zod env, one schema per auth mode
+    src/core/auth/          AuthStrategy interface, shared secret, remote JWT
+    src/core/utils/         error, tool-name and result wrappers
+    src/domain/             stubs to replace: API client, env, tools, prompts
+    tests/core/             core tests
+    .claude/skills/         9 agent skills
+    k8s/                    Helm chart with dev, stage and prod values
+    .github/workflows/      deploy to dev or stage, deploy to prod on a tag
+    Dockerfile              two stages, production dependencies, non-root user
+    scripts/, manifest.json Claude Desktop bundle builder
+  notes:
+    - path: src/core/ and src/domain/
+      why: Core is reused unchanged and domain is replaced per service.
+    - path: src/core/auth/
+      why: One AuthStrategy interface with two implementations. In JWT mode the server holds no credentials, signing key or database. The key-set URL used by pods is separate from the public issuer URL, because pods cannot reach public URLs that route back into the cluster.
+    - path: src/core/utils/
+      why: The wrappers patch the SDK's tool registration, so a tool needs no error handling or name prefix of its own.
+    - path: src/domain/tools/<tool>/
+      why: For non-trivial tools, a thin register.ts holds the MCP layer and a pure core.ts holds the logic with no SDK import, so unit tests need no MCP server. The quiz builder uses this pattern.
+    - path: k8s/ and .github/workflows/
+      why: The chart and both workflows are the deploy contract. A new variable has to appear in the schema, the example file and the workflows' --set lines, which is why the env skill edits all three.
+tools:
+  title: Skills
+  intro: Nine skills in .claude/skills. CLAUDE.md tells the agent to use them for tools, prompts and env variables.
+  groups:
+    - title: Set up
+      items:
+        - name: /init-mcp-template
+          does: Renames the template into a new service and sets the auth mode, with a confirmation step before any file changes. It can delete itself and the template guide afterwards.
+    - title: Build
+      items:
+        - name: /add-tool
+          does: Writes a tool module with Zod schemas, an output schema and read-only, create, update or delete annotations. List tools get a page size capped at 50.
+        - name: /add-prompt
+          does: Adds an MCP prompt.
+        - name: /add-env
+          does: Classifies a variable as secret or plain config, with ambiguous cases treated as secret. Edits the Zod schema, the example env file and the --set lines in both workflows, then prints the steps left in the GitHub UI.
+    - title: Ship
+      items:
+        - name: /open-pr
+          does: Opens a pull request. Branch names carry a ticket ID and the PR title prefix comes from it.
+        - name: /stage-release / /pre-release / /release
+          does: Shell-driven git flow. A release branch is cut from develop, the version bumped and the stage deploy triggered, then PRs go to develop and main, the tag is pushed and the branches cleaned up.
+        - name: /release-message
+          does: Writes the release message as part of the release set.
+decisions:
+  - kind: decision
+    title: Central sign-in by default, shared secret as the alternative
+    why: In the default mode the server holds no credentials, signing key or database. It verifies RS256 tokens from the auth service against the service's keys and checks issuer and audience. The shared-secret header, compared in constant time, serves a server that does not use the auth service. The entry point picks the mode from whether the auth service URL is set.
+  - kind: decision
+    title: Stateless server, built per request
+    why: Each POST to the MCP endpoint builds a new MCP server and transport around one shared API client. Nothing carries between requests, and a per-request context holds the actor so write tools can record who made a change. The chart includes a horizontal autoscaler.
+  - kind: decision
+    title: Skills as the way to add anything
+    why: CLAUDE.md tells agents to use the tool, prompt and env skills and not to hand-edit env, Helm or workflow files for a new variable. The skills carry the pattern.
+  - kind: decision
+    title: Secrets from GitHub Environments
+    why: The deploy workflows set secrets and variables on the Helm release from GitHub Environments. This replaced SOPS-encrypted files in the repo. The aim was to remove hardcoded secrets from the repo, and a runbook covers the migration. The upgrade runs atomically with a 5 minute timeout, so a failed deploy rolls back.
+rules:
+  items:
+    - rule: A misconfigured server exits at boot
+      why: The pod stops with numbered errors instead of failing on the first request. The schema has one variant for each auth mode.
+      heldBy:
+        - Zod env schema
+        - process exit on failure
+    - rule: Auth is a strategy behind one interface
+      why: The mode follows from whether the auth service URL is set, so a server moves between the shared secret and the central JWT through configuration. In JWT mode it holds no signing key.
+      heldBy:
+        - AuthStrategy interface
+        - code review
+    - rule: A new env variable goes through /add-env
+      why: The variable must be in the schema, the example file and both deploy workflows, or the variable is missing at deploy and the boot check fails. One skill keeps the three in step.
+      heldBy:
+        - /add-env skill
+        - documented in CLAUDE.md
+        - PR template checklist
+    - rule: Core stays untouched and tool logic stays free of MCP code
+      why: Core is shared plumbing, and a pure core.ts per tool keeps tools unit-testable.
+      heldBy:
+        - documented rule
+        - documented in CLAUDE.md
+  agents: CLAUDE.md routes the agent to the skills, with "always use" for tools, prompts and env variables.
+connections:
+  - to: quiz-builder
+    label: is the starting point of the
+  - to: media-storage
+    label: was first developed inside the
+  - to: auth-service
+    label: verifies tokens from the
+  - to: ai-clients
+    label: serves tools to

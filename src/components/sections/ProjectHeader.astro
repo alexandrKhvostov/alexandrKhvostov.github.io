@@ -1,0 +1,65 @@
+---
+import Badge from "@/components/ui/Badge.astro";
+import Chip from "@/components/ui/Chip.astro";
+import Link from "@/components/ui/Link.astro";
+import GlanceStrip from "@/components/blocks/GlanceStrip.astro";
+import { aiAgentsLabel, companyLabels, disciplineLabels } from "@/lib/projects";
+import type { Project } from "@/lib/types";
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+---
+
+<header class="flex flex-col gap-5">
+  <p data-enter style="--i: 0" class="flex flex-wrap items-center gap-3 text-small text-muted">
+    <Badge company={project.company}>{companyLabels[project.company]}</Badge>
+    <span class="font-mono text-mono">{project.period}</span>
+  </p>
+  <!-- The title carries the view-transition-name and is not part of the entrance, so the morph from the row has a stable target. -->
+  <h1 class="text-h1" style={`view-transition-name: project-${project.slug}`}>
+    {project.title}
+  </h1>
+  <p data-enter style="--i: 1" class="text-small text-muted">
+    {project.role}
+  </p>
+  <p data-enter style="--i: 2" class="max-w-prose text-lead">
+    {project.summary}
+  </p>
+  <ul data-enter style="--i: 3" class="flex flex-wrap gap-2" aria-label="Disciplines">
+    {project.disciplines.map((discipline) => (
+      <li>
+        <Chip variant="discipline">{disciplineLabels[discipline]}</Chip>
+      </li>
+    ))}
+    {project.aiAgents && (
+      <li>
+        <Chip variant="ai">{aiAgentsLabel}</Chip>
+      </li>
+    )}
+  </ul>
+  <div data-enter style="--i: 4">
+    <GlanceStrip items={project.glance} />
+  </div>
+  <ul data-enter style="--i: 5" class="flex flex-wrap gap-2" aria-label="Stack">
+    {project.stack.map((item) => (
+      <li>
+        <Chip variant="stack">{item}</Chip>
+      </li>
+    ))}
+  </ul>
+  {project.links.length > 0 && (
+    <ul data-enter style="--i: 6" class="flex flex-wrap gap-x-5 gap-y-2 text-small" aria-label="Links">
+      {project.links.map((link) => (
+        <li>
+          <Link href={link.url} external>
+            {link.label}
+            <span aria-hidden="true"> ↗</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )}
+</header>

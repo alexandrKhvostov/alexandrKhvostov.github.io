@@ -1,28 +1,27 @@
 ---
 interface Props {
-  /** Category dot; tones are categories, never fills. */
-  tone?: "author" | "runtime" | "infra" | "product";
+  /** Company-line dot; company colors mark a line of work, never fill a surface. */
+  company?: "playme" | "sysgears" | "side";
   class?: string;
   [attr: string]: unknown;
 }
 
-const { tone, class: className, ...rest } = Astro.props;
+const { company, class: className, ...rest } = Astro.props;
 
 const dots = {
-  author: "bg-tone-author",
-  runtime: "bg-tone-runtime",
-  infra: "bg-tone-infra",
-  product: "bg-tone-product",
+  playme: "bg-company-playme",
+  sysgears: "bg-company-sysgears",
+  side: "bg-company-side",
 };
 ---
 
 <span
   {...rest}
   class:list={[
-    "inline-flex items-center gap-2 rounded-sm border border-line px-2 py-1 font-mono text-eyebrow text-muted",
+    "inline-flex items-center gap-2 rounded-sm border border-line bg-surface-1 px-2 py-1 font-mono text-mono text-muted",
     className,
   ]}
 >
-  {tone && <span aria-hidden="true" class:list={["size-2 rounded-pill", dots[tone]]} />}
+  {company && <span aria-hidden="true" class:list={["size-2 rounded-pill", dots[company]]} />}
   <slot />
 </span>

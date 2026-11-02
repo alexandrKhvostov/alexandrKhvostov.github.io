@@ -23,10 +23,11 @@ The orchestrating session plans, dispatches agents, makes design calls and talks
 
 ## Content loop (one case)
 
-1. Copywriter drafts `src/content/cases/<slug>.yaml`.
-2. Fact-checker marks every claim as sourced or unsourced.
-3. The developer edits the wording: it is their voice and they defend it in interviews.
-4. Render and look at it in the browser together.
+1. Copywriter drafts `src/content/projects/<slug>.yaml`.
+2. The draft goes through the `humanizer:humanizer` skill, which rewrites AI tells into plain prose without changing meaning.
+3. Fact-checker marks every claim as sourced or unsourced, on the humanized text, so a rewrite cannot slip in an unsourced claim.
+4. The developer edits the wording: it is their voice and they defend it in interviews.
+5. Render and look at it in the browser together.
 
 When this loop has run twice, turn it into an `add-case` skill.
 

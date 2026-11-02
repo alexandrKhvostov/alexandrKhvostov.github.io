@@ -1,0 +1,77 @@
+---
+import Chip from "@/components/ui/Chip.astro";
+import { aiAgentsLabel, disciplineLabels } from "@/lib/projects";
+import { projectFilterKeys } from "@/lib/filters";
+import { projectPath } from "@/lib/site";
+import type { Project } from "@/lib/types";
+
+interface Props {
+  project: Project;
+  [attr: string]: unknown;
+}
+
+const { project, ...rest } = Astro.props;
+
+// Literal class names so Tailwind sees them: the 4px left edge keeps the company color on hover.
+const edges = {
+  playme: "border-l-company-playme hover:border-l-company-playme",
+  sysgears: "border-l-company-sysgears hover:border-l-company-sysgears",
+  side: "border-l-company-side hover:border-l-company-side",
+};
+---
+
+<li
+  {...rest}
+  data-project
+  data-filter-keys={projectFilterKeys(project).join(" ")}
+  class:list={[
+    "project-row relative flex flex-col gap-2 rounded-md border border-l-4 border-line bg-surface-1 p-4 transition-shadow duration-fast ease-out hover:border-signal-2 hover:shadow-glow-row sm:p-5",
+    edges[project.company],
+  ]}
+>
+  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <h3 class="text-h3">
+      <a
+        href={projectPath(project.slug)}
+        class="project-link text-ink no-underline"
+        style={`view-transition-name: project-${project.slug}`}
+      >
+        {project.title}
+      </a>
+    </h3>
+    <p class="font-mono text-mono text-muted">{project.period}</p>
+  </div>
+  <p class="max-w-prose text-small text-muted">{project.summary}</p>
+  <p class="text-small text-muted">{project.role}</p>
+  <ul class="mt-1 flex flex-wrap gap-2" aria-label="Disciplines">
+    {project.disciplines.map((discipline) => (
+      <li>
+        <Chip variant="discipline">{disciplineLabels[discipline]}</Chip>
+      </li>
+    ))}
+    {project.aiAgents && (
+      <li>
+        <Chip variant="ai">{aiAgentsLabel}</Chip>
+      </li>
+    )}
+  </ul>
+</li>
+
+<style>
+  /* The whole row is the link: the anchor's box stretches over it, so chips and text need no extra links. */
+  .project-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+  }
+
+  .project-link:focus-visible {
+    outline: none;
+  }
+
+  .project-link:focus-visible::after {
+    outline: var(--ring-width) solid var(--signal);
+    outline-offset: var(--ring-offset);
+  }
+</style>

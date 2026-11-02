@@ -40,19 +40,17 @@ test("hash links, ids and private fields are not colors", () => {
 });
 
 test("font family names are reported outside the allowed paths", () => {
-  assert.deepEqual(rules("src/pages/index.astro", `<p style="font-family: 'IBM Plex Sans'">`), ["raw-font"]);
-  assert.deepEqual(rules("src/layouts/L.astro", `import "@fontsource/instrument-serif/400.css";`), [
-    "raw-font",
-  ]);
-  assert.deepEqual(rules("src/styles/global.css", `font-family: "Instrument Serif";`), ["raw-font"]);
+  assert.deepEqual(rules("src/pages/index.astro", `<p style="font-family: 'Geist Variable'">`), ["raw-font"]);
+  assert.deepEqual(rules("src/layouts/L.astro", `import "@fontsource-variable/geist-mono";`), ["raw-font"]);
+  assert.deepEqual(rules("src/styles/global.css", `font-family: "Geist Mono Variable";`), ["raw-font"]);
 });
 
 test("raw colors and font names are allowed in src/styles/tokens/ and src/styles/fonts.css only", () => {
-  const text = `:root { --p-x: #aabbcc; --p-y: rgb(1 2 3 / 0.5); --font-sans: "IBM Plex Sans"; }`;
+  const text = `:root { --p-x: #aabbcc; --p-y: rgb(1 2 3 / 0.5); --font-sans: "Geist Variable"; }`;
   assert.deepEqual(rules("src/styles/tokens/primitives.css", text), []);
   assert.deepEqual(rules("src/styles/tokens/scale.css", text), []);
   assert.deepEqual(rules("src/styles/fonts.css", text), []);
-  assert.notDeepEqual(rules("src/styles/themes/warm-light.css", text), []);
+  assert.notDeepEqual(rules("src/styles/themes/signal-light.css", text), []);
   assert.notDeepEqual(rules("src/styles/tailwind.css", text), []);
   assert.notDeepEqual(rules("src/styles/fonts.css.bak.css", text), []);
   assert.equal(isAllowedForRawValues("src/styles/tokens/deep/nested.css"), true);
@@ -98,7 +96,7 @@ const items = ["a", "b"];
 const first = items[0];
 ---
 <section class="mx-auto flex max-w-page flex-col gap-5 rounded-md border border-line bg-surface-1 p-5 text-ink">
-  <a href="#top" class="text-accent hover:decoration-2">{first}</a>
+  <a href="#top" class="text-signal hover:decoration-2">{first}</a>
   <input type="text" aria-label="x [y]" />
 </section>
 <style>

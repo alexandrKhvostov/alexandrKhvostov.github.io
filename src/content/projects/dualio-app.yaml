@@ -1,0 +1,179 @@
+title: Dualio app
+company: playme
+period: "2026"
+order: 5
+role: Owned the app architecture, code quality and review, and the Expo deploy setup.
+disciplines: [mobile]
+aiAgents: false
+summary: iOS and Android client of Dualio, where users create an AI avatar and generate videos with it, shipped through Expo builds and over-the-air updates.
+glance:
+  - value: iOS + Android
+    label: from one Expo codebase
+  - value: "2"
+    label: release paths, native build or over-the-air update, picked by CI
+  - value: "3"
+    label: release workflows, dev, stage and prod
+stack:
+  - TypeScript
+  - Expo SDK 57
+  - React Native
+  - expo-router
+  - TanStack Query
+  - openapi-fetch
+  - Zustand
+  - NativeWind
+  - Zod
+  - expo-iap
+  - Sentry
+  - EAS
+  - GitHub Actions
+  - Jest
+overview:
+  - Dualio is an AI photo and video app. A user makes an AI avatar of themselves and generates videos. They take a selfie or describe the avatar, pick a style, optionally add a voice sample, and create it. Then they pick a video type, fill in a form and spend credits. The app calls no model itself. It submits jobs to the backend and shows the result in a gallery, with a push when it is ready.
+  - The app is Expo and React Native with file-based routes. Calls to the backend go through typed hooks built on openapi-fetch, and the types are generated from the backend's Swagger. The form for each video type is built at runtime from field definitions the backend sends. Credits are a wallet balance that a video spends. Subscriptions are bought through store in-app purchases, and the backend validates the receipts.
+  - Dualio's web app runs the paid-traffic funnel and hands the visitor over to the stores through an AppsFlyer link. The mobile app reads the attribution from that link, keeps it until sign-up and sends it with the register request. Both clients use the same Dualio backend over REST.
+diagram:
+  type: pipeline
+  caption: How a backend API change reaches users, from the generated types through the git hooks to a native build or an over-the-air update.
+  nodes:
+    - id: swagger
+      label: Backend Swagger
+    - id: types
+      label: Generated types
+    - id: code
+      label: App code and hooks
+    - id: hooks
+      label: Git hooks
+    - id: ci
+      label: Build-type check
+    - id: eas
+      label: EAS build or update
+  steps:
+    - from: swagger
+      to: types
+      label: Generate types
+      note: The prepare script regenerates src/types/api-schema.ts from the backend's Swagger. The file is not edited by hand, and lint skips it.
+    - from: types
+      to: code
+      label: Alias and call
+      note: Each entity has hooks in services/api-hooks, and its types file holds only aliases to the generated types. A backend change that breaks a call shows up as a compile error.
+    - from: code
+      to: hooks
+      label: Commit and push
+      note: Pre-commit runs lint-staged and tsc. The commit message goes through commitlint. Pre-push runs lint, a format check, the type check and the tests.
+    - from: hooks
+      to: ci
+      label: Push release branch
+      note: A push to a release branch starts the stage workflow, which runs the build-type check first.
+    - from: ci
+      to: eas
+      label: Native build
+      note: The check diffs app.config.ts, eas.json, package.json and the lockfile against the last build tag. If native inputs changed and NATIVE_VERSION was bumped, EAS builds a new binary.
+    - from: ci
+      to: eas
+      label: Over-the-air update
+      note: If no native input changed, the workflow publishes an EAS Update. NATIVE_VERSION is also the runtimeVersion, which Expo uses to match an update to compatible binaries.
+    - from: ci
+      to: eas
+      label: Error, check fails
+      note: If native files changed without a NATIVE_VERSION bump, the check fails with an error.
+structure:
+  tree: |
+    src/app/            expo-router routes, kept thin
+    src/screens/        one screen per route
+    src/widgets/        tab bar, toast, error boundary
+    src/features/       business actions: quiz, create video, paywall, gallery
+    src/components/     gluestack UI and common components
+    src/services/       API client, API hooks per entity, analytics, IAP, Sentry
+    src/store/          shared Zustand stores
+    src/config/         quiz and course JSON configs, environments
+    src/types/          api-schema.ts, generated from the backend Swagger
+    .github/workflows/  release-dev, release-stage, release-prod
+    .github/actions/    composite actions, among them detect-build-type
+    .docs/              architecture, API interaction and git flow guides
+  notes:
+    - path: src/services/api-hooks/<entity>/
+      why: "Each entity has keys, queries, mutations and types files, and a query-key factory is required. Components never call fetch, so cache invalidation lives next to the call."
+    - path: src/types/api-schema.ts
+      why: The only source of API types, generated from the backend Swagger. Entity types files hold aliases, never hand-written models.
+    - path: src/app/ and src/screens/
+      why: Route files stay thin and each route has one screen that composes widgets and features and runs the main query. Layouts do the route guards by returning a redirect.
+    - path: src/features/
+      why: "One folder per business action. The layering is a mix of layered design and Feature-Sliced Design, described in .docs."
+    - path: .github/actions/detect-build-type/
+      why: The composite action that decides between a native build, an update and an error. The stage release workflow calls it before building.
+tools:
+  title: Screens
+  intro: "31 route files in the groups auth, tabs, create-avatar and create-video, plus standalone screens. The tabs are discover, gallery, courses and profile."
+  groups:
+    - title: First launch
+      items:
+        - name: Welcome
+          does: A video background with two buttons, one for people who have an account and one that starts the in-app quiz.
+        - name: Quiz
+          does: The onboarding quiz. Steps come from a JSON config that is checked with Zod and rendered through registries of step components. It ends at sign-up.
+        - name: Sign-up and paywall
+          does: Email, Google and Apple sign-up, then a pre-paywall and the paywall sheet before the discover tab.
+    - title: Creating
+      items:
+        - name: Create avatar
+          does: Take a selfie, pick a photo or describe the avatar, then choose a style, an optional voice and a name.
+        - name: Create video
+          does: Pick a video type, fill in a form built from the backend's field definitions and submit. If the wallet is short, the paywall opens.
+    - title: Library
+      items:
+        - name: Gallery
+          does: Videos and avatars tabs that poll while the screen is focused, video and photo players, download, share and a feedback sheet.
+        - name: Courses
+          does: Lessons that link to video types.
+        - name: Profile
+          does: Subscription management, restore purchases and account deletion.
+decisions:
+  - kind: decision
+    title: API types only from the generated schema
+    why: One source of truth for the shape of the backend. The prepare script regenerates the types, the repo's CLAUDE.md forbids hand-written API models, and strict tsc runs in pre-commit and pre-push, so a changed endpoint breaks the build of the code that uses it.
+  - kind: decision
+    title: Native builds and updates split by NATIVE_VERSION
+    why: The version constant in app.config.ts is also the Expo runtimeVersion, which Expo uses to match an update to compatible binaries. CI compares the native inputs with the last build tag and picks a native build, an update or an error. The stage workflow runs on every push to a release branch, a prod build on a v tag with store submit.
+  - kind: decision
+    title: One shared token refresh
+    why: Concurrent 401 responses share one refresh behind a mutex, and a request whose token was already replaced retries with the new one. A late refresh cannot bring back a logged-out session. Refresh tries 3 times with backoff, and a 401 or 403 on refresh logs the user out. A dedicated unit test covers it.
+  - kind: decision
+    title: Attribution kept until sign-up
+    why: AppsFlyer's deep link and install callbacks write into a persisted store, because sign-up comes several screens after the first launch. The merge keeps old keys and ignores undefined, so a later partial payload cannot erase earlier attribution. The store is sent with email, Google and Apple register requests, then cleared.
+  - kind: decision
+    title: Updates apply before launch
+    why: The splash stays up until fonts, auth status and the update check finish, and a pending update is applied before the app renders, so users always run the latest JavaScript.
+rules:
+  items:
+    - rule: API types come only from the generated OpenAPI schema
+      why: A hand-written model can drift from the backend without anyone noticing. Generated types make the compiler report the break.
+      heldBy:
+        - generator in the prepare script
+        - strict tsc in pre-commit and pre-push
+        - documented in CLAUDE.md
+    - rule: A native change needs a NATIVE_VERSION bump
+      why: An update must never reach a binary with different native code.
+      heldBy:
+        - CI check detect-build-type
+        - runtimeVersion equals NATIVE_VERSION
+    - rule: Network calls go only through per-entity hooks with a query-key factory
+      why: It keeps cache invalidation next to the call.
+      heldBy:
+        - documented in CLAUDE.md and .docs
+        - CodeRabbit review
+    - rule: Lint, types, formatting and commit messages are checked by git hooks on commit and push
+      why: "Problems are caught before code leaves a developer's machine: git hooks run the checks. ESLint runs with no allowed warnings, and commitlint limits the header length."
+      heldBy:
+        - Husky pre-commit, commit-msg and pre-push
+        - ESLint
+        - commitlint
+  agents: CLAUDE.md holds the architecture rules, the commands and a checklist for adding an environment variable. CodeRabbit reads it and the .docs folder as review guidelines on pull requests.
+connections:
+  - to: dualio-web
+    label: receives users handed off from the
+  - to: product-backends
+    label: calls the Dualio REST API in the
+links:
+  - label: Dualio on the App Store
+    url: https://apps.apple.com/us/app/dualio-ai-video-creator/id6761111394

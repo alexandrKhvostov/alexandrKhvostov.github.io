@@ -19,12 +19,12 @@ const {
 
 const variants = {
   primary: "btn-primary bg-ink text-bg",
-  secondary: "border border-line-strong bg-transparent text-ink hover:bg-surface-2 active:bg-surface-3",
+  secondary: "border border-line-strong bg-transparent text-ink hover:bg-surface-2 active:bg-line",
   quiet: "bg-transparent text-muted hover:text-ink",
 };
 
 const classes = [
-  "inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-small font-medium no-underline transition-colors duration-fast ease-out",
+  "inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-small font-medium no-underline pressable",
   variants[variant],
   disabled && "pointer-events-none opacity-50",
   className,

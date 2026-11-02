@@ -1,3 +1,4 @@
+import { initReveal } from "@/scripts/reveal";
 import { applyTheme, currentTheme } from "@/scripts/theme";
 import type { ThemeId } from "@/styles/themes/index";
 
@@ -70,6 +71,18 @@ function say(message: string): void {
   if (status) status.textContent = message;
 }
 
+/** Replays the staggered entrance on the sample blocks: drop the animation, force a reflow, restore it. */
+function initEntrance(): void {
+  const blocks = document.querySelectorAll<HTMLElement>("[data-lab-entrance] [data-enter]");
+  document.querySelector("[data-lab-replay]")?.addEventListener("click", () => {
+    blocks.forEach((block) => {
+      block.style.animation = "none";
+      void block.offsetWidth;
+      block.style.removeProperty("animation");
+    });
+  });
+}
+
 export function initLab(): void {
   for (const item of items()) {
     const name = item.dataset.labRole!;
@@ -109,6 +122,9 @@ export function initLab(): void {
       say("Clipboard is blocked: select the block above and copy it by hand.");
     }
   });
+
+  initEntrance();
+  initReveal();
 
   document.addEventListener("themechange", () => {
     clearEdits();

@@ -1,0 +1,15 @@
+---
+import ContactLinks from "@/components/blocks/ContactLinks.astro";
+import { contactId, siteLocation, siteName, siteRole } from "@/lib/site";
+---
+
+<footer id={contactId} class="relative border-t border-line">
+  <div class="mx-auto flex w-full max-w-page flex-col gap-5 px-gutter py-7 sm:flex-row sm:items-end sm:justify-between">
+    <div class="flex flex-col gap-1">
+      <p class="font-medium text-ink">{siteName}</p>
+      <p class="text-small text-muted">{siteRole}</p>
+      <p class="text-small text-muted">{siteLocation}</p>
+    </div>
+    <ContactLinks />
+  </div>
+</footer>

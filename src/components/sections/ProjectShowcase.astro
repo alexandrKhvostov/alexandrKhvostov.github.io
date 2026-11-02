@@ -1,0 +1,39 @@
+---
+import CodeBlock from "@/components/blocks/CodeBlock.astro";
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import ShowcaseStrip from "@/components/blocks/ShowcaseStrip.astro";
+import Link from "@/components/ui/Link.astro";
+import type { Showcase } from "@/lib/types";
+
+interface Props {
+  showcase: Showcase;
+}
+
+const { showcase } = Astro.props;
+---
+
+<section data-reveal aria-labelledby="showcase" class="flex flex-col gap-5">
+  <SectionHeading id="showcase" title={showcase.title} />
+  <p class="max-w-prose">{showcase.intro}</p>
+  {showcase.link && (
+    <p>
+      <Link href={showcase.link.url} external target="_blank">
+        {showcase.link.label}
+        <span aria-hidden="true"> ↗</span>
+        <span class="sr-only"> (opens in a new tab)</span>
+      </Link>
+    </p>
+  )}
+  <ShowcaseStrip screens={showcase.screens} />
+  <ul class="flex flex-col">
+    {showcase.points.map((point) => (
+      <li class="max-w-prose border-t border-line py-3 first:border-t-0 first:pt-0">{point}</li>
+    ))}
+  </ul>
+  {showcase.excerpt && (
+    <figure class="flex flex-col gap-3">
+      <CodeBlock code={showcase.excerpt.code} label={showcase.excerpt.caption} />
+      <figcaption class="text-small text-muted">{showcase.excerpt.caption}</figcaption>
+    </figure>
+  )}
+</section>

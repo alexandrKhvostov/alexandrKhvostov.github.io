@@ -3,7 +3,7 @@
 export interface ColorRole {
   /** CSS variable without the leading dashes. */
   name: string;
-  group: "canvas" | "line" | "text" | "accent" | "code" | "tone";
+  group: "canvas" | "line" | "text" | "signal" | "code" | "company" | "kind";
   /** Literal background class, so Tailwind sees it. */
   swatch: string;
   use: string;
@@ -11,54 +11,67 @@ export interface ColorRole {
 
 export const colorRoles: readonly ColorRole[] = [
   { name: "bg", group: "canvas", swatch: "bg-bg", use: "page canvas" },
-  { name: "surface-1", group: "canvas", swatch: "bg-surface-1", use: "cards, panels" },
-  { name: "surface-2", group: "canvas", swatch: "bg-surface-2", use: "sunken, inline code, hover" },
-  { name: "surface-3", group: "canvas", swatch: "bg-surface-3", use: "selected, pressed" },
+  { name: "surface-1", group: "canvas", swatch: "bg-surface-1", use: "panels, project rows, code frames" },
+  { name: "surface-2", group: "canvas", swatch: "bg-surface-2", use: "diagram nodes, chips, hover" },
   { name: "line", group: "line", swatch: "bg-line", use: "hairlines, dividers" },
   { name: "line-strong", group: "line", swatch: "bg-line-strong", use: "inputs, focused frames" },
-  { name: "ink", group: "text", swatch: "bg-ink", use: "body text, headings" },
-  { name: "muted", group: "text", swatch: "bg-muted", use: "secondary text, captions" },
-  { name: "accent", group: "accent", swatch: "bg-accent", use: "links, focus ring, active nav" },
+  { name: "ink", group: "text", swatch: "bg-ink", use: "text, headings" },
+  { name: "muted", group: "text", swatch: "bg-muted", use: "secondary text" },
   {
-    name: "accent-fill",
-    group: "accent",
-    swatch: "bg-accent-fill",
-    use: "highlight marks, the one CTA chip",
+    name: "signal",
+    group: "signal",
+    swatch: "bg-signal",
+    use: "links, focus ring, active node, running signal",
   },
-  { name: "on-accent", group: "accent", swatch: "bg-on-accent", use: "text on accent fill" },
+  { name: "signal-2", group: "signal", swatch: "bg-signal-2", use: "second hue in glows and gradients" },
+  { name: "signal-glow", group: "signal", swatch: "bg-signal-glow", use: "glow hue, decorative only" },
   { name: "code-bg", group: "code", swatch: "bg-code-bg", use: "code blocks (always dark)" },
   { name: "code-ink", group: "code", swatch: "bg-code-ink", use: "text in code blocks" },
-  { name: "tone-author", group: "tone", swatch: "bg-tone-author", use: "AI authoring" },
-  { name: "tone-runtime", group: "tone", swatch: "bg-tone-runtime", use: "runtime" },
-  { name: "tone-infra", group: "tone", swatch: "bg-tone-infra", use: "infrastructure" },
-  { name: "tone-product", group: "tone", swatch: "bg-tone-product", use: "product and people" },
+  { name: "code-key", group: "code", swatch: "bg-code-key", use: "keys in code blocks" },
+  { name: "company-playme", group: "company", swatch: "bg-company-playme", use: "PlayMe line" },
+  { name: "company-sysgears", group: "company", swatch: "bg-company-sysgears", use: "SysGears line" },
+  { name: "company-side", group: "company", swatch: "bg-company-side", use: "side projects" },
+  {
+    name: "kind-decision",
+    group: "kind",
+    swatch: "bg-kind-decision",
+    use: "square before a decision in the log",
+  },
+  { name: "kind-trade-off", group: "kind", swatch: "bg-kind-trade-off", use: "square before a trade-off" },
+  { name: "kind-next", group: "kind", swatch: "bg-kind-next", use: "square before a next step" },
 ];
 
 /** Roles a theme sets that are not colors. */
-export const otherThemeRoles = ["tone-tint", "shadow-pop"] as const;
+export const otherThemeRoles = ["glow-strength"] as const;
 
 export const typeRoles = [
-  { name: "display", cls: "text-display", use: "hero only" },
-  { name: "h1", cls: "text-h1", use: "case title" },
+  { name: "display", cls: "text-display", use: "projects page title" },
+  { name: "h1", cls: "text-h1", use: "project title" },
   { name: "h2", cls: "text-h2", use: "section" },
-  { name: "h3", cls: "text-h3", use: "subsection, card title" },
-  { name: "lead", cls: "text-lead", use: "intro paragraphs" },
+  { name: "h3", cls: "text-h3", use: "rule, decision, row title" },
+  { name: "lead", cls: "text-lead", use: "the one-sentence what it is" },
   { name: "body", cls: "text-body", use: "prose" },
-  { name: "small", cls: "text-small", use: "captions, card text" },
-  { name: "eyebrow", cls: "text-eyebrow", use: "section labels" },
+  { name: "small", cls: "text-small", use: "captions, row descriptions" },
+  { name: "mono", cls: "text-mono font-mono", use: "code, chips" },
 ] as const;
 
 export const fontRoles = [
   { name: "sans", cls: "font-sans", use: "headings, body, UI" },
-  { name: "mono", cls: "font-mono", use: "code, eyebrows, badges" },
-  { name: "accent", cls: "font-accent", use: "one emphasized phrase per page" },
+  { name: "mono", cls: "font-mono", use: "code, stack chips, file names" },
 ] as const;
 
 export const radiusRoles = [
-  { name: "sm", cls: "rounded-sm", use: "badges, inputs, buttons" },
-  { name: "md", cls: "rounded-md", use: "cards, code" },
-  { name: "lg", cls: "rounded-lg", use: "map frame, large panels" },
-  { name: "pill", cls: "rounded-pill", use: "tabs, theme switch" },
+  { name: "sm", cls: "rounded-sm", use: "chips, nodes, buttons" },
+  { name: "md", cls: "rounded-md", use: "project rows, code" },
+  { name: "lg", cls: "rounded-lg", use: "the screen frame" },
+  { name: "pill", cls: "rounded-pill", use: "filters, theme switch" },
+] as const;
+
+/** Glow tokens: the shadow utility that shows each one. */
+export const glowRoles = [
+  { name: "node", cls: "shadow-glow-node", use: "active diagram node" },
+  { name: "shot", cls: "shadow-glow-shot", use: "screen frame" },
+  { name: "row", cls: "shadow-glow-row", use: "project row on hover" },
 ] as const;
 
 export const spaceRoles = [
@@ -76,5 +89,5 @@ export const spaceRoles = [
 export const motionRoles = [
   { name: "fast", cls: "duration-fast", use: "hover, press" },
   { name: "base", cls: "duration-base", use: "panels, theme switch" },
-  { name: "slow", cls: "duration-slow", use: "map edges, timeline" },
+  { name: "enter", cls: "duration-enter", use: "entrance of a block" },
 ] as const;

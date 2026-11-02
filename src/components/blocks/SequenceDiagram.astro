@@ -1,0 +1,18 @@
+---
+import DiagramCanvas from "@/components/blocks/DiagramCanvas.astro";
+import { diagramPresets, layoutSequence } from "@/lib/diagram-layout";
+import type { DiagramData } from "@/lib/types";
+
+interface Props {
+  diagram: DiagramData;
+  activeStep?: number;
+}
+
+const { diagram, activeStep = 0 } = Astro.props;
+const label = `Sequence diagram. ${diagram.caption} The numbered steps list below describes every message.`;
+const wide = layoutSequence(diagram.nodes, diagram.steps, diagramPresets.sequence.wide);
+const narrow = layoutSequence(diagram.nodes, diagram.steps, diagramPresets.sequence.narrow);
+---
+
+<DiagramCanvas layout={wide} variant="wide" label={label} activeStep={activeStep} />
+<DiagramCanvas layout={narrow} variant="narrow" label={label} activeStep={activeStep} />

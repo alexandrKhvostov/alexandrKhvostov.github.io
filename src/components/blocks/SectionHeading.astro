@@ -1,0 +1,112 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  class?: string;
+}
+
+const { id, title, class: className } = Astro.props;
+---
+
+<h2 id={id} class:list={["section-heading text-h2", className]}>
+  {title}
+  <a
+    data-anchor
+    href={`#${id}`}
+    aria-label={`Link to the section ${title}`}
+    class="section-anchor rounded-sm font-mono text-muted no-underline hover:text-signal"
+  >
+    <span class="anchor-glyphs" aria-hidden="true">
+      <span class="anchor-hash">#</span>
+      <span class="anchor-check">✓</span>
+    </span>
+    <span class="anchor-copied text-small" aria-hidden="true">
+      Copied
+    </span>
+  </a>
+</h2>
+
+<script>
+  import { initAnchors } from "@/scripts/anchors";
+
+  initAnchors();
+</script>
+
+<style>
+  /* The anchor shows on hover and focus; on touch screens, which have no hover, it stays visible but dimmed. */
+  .section-anchor {
+    --anchor-gap: var(--space-2);
+    --anchor-touch-opacity: 0.35;
+    margin-inline-start: var(--anchor-gap);
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+
+  .section-heading:hover .section-anchor,
+  .section-anchor:focus-visible,
+  .section-anchor[data-copied] {
+    opacity: 1;
+  }
+
+  /* A copied link answers on the anchor itself: # turns into a check and "Copied" shows beside it,
+     then both go back (scripts/anchors.ts sets data-copied for a moment). The label sits outside the
+     flow, so the heading never reflows. */
+  .section-anchor {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .anchor-glyphs {
+    display: inline-grid;
+  }
+
+  .anchor-hash,
+  .anchor-check {
+    grid-area: 1 / 1;
+    transition:
+      opacity var(--dur-fast) var(--ease-out),
+      filter var(--dur-fast) var(--ease-out);
+  }
+
+  .anchor-check,
+  .section-anchor[data-copied] .anchor-hash {
+    opacity: 0;
+    filter: blur(2px);
+  }
+
+  .section-anchor[data-copied] .anchor-check {
+    opacity: 1;
+    filter: none;
+    color: var(--signal);
+  }
+
+  .anchor-copied {
+    --copied-shift: var(--space-1);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + var(--space-2));
+    font-family: var(--font-sans);
+    font-weight: 400;
+    letter-spacing: 0;
+    white-space: nowrap;
+    color: var(--signal);
+    opacity: 0;
+    transform: translate(calc(var(--copied-shift) * -1), -50%);
+    pointer-events: none;
+    transition:
+      opacity var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-enter);
+  }
+
+  .section-anchor[data-copied] .anchor-copied {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+
+  @media (hover: none) {
+    .section-anchor {
+      opacity: var(--anchor-touch-opacity);
+    }
+  }
+</style>

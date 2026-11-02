@@ -13,7 +13,7 @@ const { class: className, ...rest } = Astro.props;
   {...rest}
   aria-label="Switch theme"
   class:list={[
-    "inline-flex items-center gap-2 rounded-pill border border-line-strong px-3 py-1 font-mono text-eyebrow text-ink transition-colors duration-fast ease-out hover:bg-surface-2 active:bg-surface-3",
+    "inline-flex items-center gap-2 rounded-pill border border-line-strong px-3 py-1 font-mono text-mono text-ink pressable hover:bg-surface-2 active:bg-line",
     className,
   ]}
 >
@@ -28,7 +28,9 @@ const { class: className, ...rest } = Astro.props;
     <circle cx="8" cy="8" r="5.25"></circle>
     <path d="M8 2.75a5.25 5.25 0 0 1 0 10.5z" fill="currentColor"></path>
   </svg>
-  <span data-theme-label>Theme</span>
+  <span data-theme-label class="max-sm:sr-only">
+    Theme
+  </span>
 </button>
 
 <script>

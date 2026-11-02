@@ -1,0 +1,28 @@
+---
+import Button from "@/components/ui/Button.astro";
+import { contactLinks } from "@/lib/site";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<ul class:list={["flex flex-wrap gap-3", className]} aria-label="Contacts">
+  {contactLinks.map((link, index) => {
+    const external = link.url.startsWith("https://");
+    return (
+      <li>
+        <Button
+          href={link.url}
+          variant={index === 0 ? "primary" : "secondary"}
+          rel={external ? "noopener noreferrer" : undefined}
+        >
+          {link.label}
+          {external && <span aria-hidden="true">↗</span>}
+        </Button>
+      </li>
+    );
+  })}
+</ul>

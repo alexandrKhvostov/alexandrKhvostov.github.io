@@ -1,0 +1,192 @@
+title: Luvea
+company: playme
+period: 2025 to 2026
+order: 3
+role: "Led the web app: designed its new architecture and moved the code onto it, reworked the funnel engine, built features, launched it and set up A/B testing."
+disciplines: [fullstack]
+aiAgents: false
+summary: Next.js web app for an AI character chat product, from paid-ad quiz funnels to paywall and chat, with 700 to 900 subscriptions a day through its funnels.
+glance:
+  - value: 700 to 900
+    label: subscriptions a day through the funnels
+  - value: "30+"
+    label: A/B tests run
+  - value: "25+"
+    label: quizzes and quiz variations launched
+  - value: "234"
+    label: cross-feature imports untangled in a phased migration
+stack:
+  - TypeScript
+  - Next.js 15
+  - React 19
+  - Mantine
+  - TanStack Query
+  - Zustand
+  - Zod 4
+  - GrowthBook
+  - Solidgate
+  - Google Tag Manager
+  - Sentry
+  - Docker
+  - Helm
+overview:
+  - Luvea is an AI character chat app. Visitors from paid ads answer a quiz, create an account, see a paywall and pay by card. Signed-in users chat with characters, create their own, generate images and buy tokens. This repository is the Next.js web app, with its own server side for sign-in, redirects and rendering.
+  - The code follows a documented layering of routes, views, features, query hooks, an API client, stores and thin wrappers around browser APIs. A ten-phase migration plan moved the older code onto it. Funnels are JSON files that Zod parses when the app loads them, so a bad config fails before a visitor sees it.
+  - Sign-in goes through route handlers in the same app, so the refresh token lives in an httpOnly cookie and scripts only see the access token. A/B buckets from GrowthBook travel in the URL and cookies until sign-up, then the user's profile becomes the source. The profile restores the bucket on another device.
+diagram:
+  type: sequence
+  caption: Sign-in through the BFF, a refresh after a 401, and a refresh during a server render.
+  nodes:
+    - id: browser
+      label: Browser
+    - id: bff
+      label: BFF routes
+    - id: backend
+      label: Backend API
+    - id: render
+      label: Server render
+  steps:
+    - from: browser
+      to: bff
+      label: Sign in
+      note: The client posts the credentials to /api/auth/login on its own origin instead of the backend. Register, Google and Apple sign-in take the same path.
+    - from: bff
+      to: backend
+      label: Forward the login
+      note: The route calls the backend's login with the site's origin, the incoming cookies and the visitor's IP in X-Forwarded-For, so the backend still sees the real client.
+    - from: backend
+      to: bff
+      label: Access and refresh token
+      note: A failed login passes its status through. If the backend sends no refresh token, the route answers 502.
+    - from: bff
+      to: browser
+      label: Split the tokens
+      note: The refresh token is set as an httpOnly, sameSite lax cookie for 6 days, secure outside local. The body carries only the access token and the subscription flag, and the client keeps the access token in a cookie it can read.
+    - from: browser
+      to: backend
+      label: Call with a Bearer token
+      note: Later calls go to the backend directly with the access token as a Bearer header, cookies included and a 20 second timeout. A 401 starts a refresh.
+    - from: browser
+      to: bff
+      label: Refresh once
+      note: The first 401 calls /api/auth/refresh. Requests that fail meanwhile wait in a queue and replay with the new token, so parallel 401s cause one refresh.
+    - from: bff
+      to: backend
+      label: Exchange the refresh token
+      note: The route reads the httpOnly cookie, which scripts cannot, and sends it to the backend. A rotated token is set as a new cookie and the new access token goes back to the browser. On a 401 or 403 the route deletes the auth cookies, and the client clears its session and returns to the home page.
+    - from: render
+      to: bff
+      label: Refresh during a server render
+      note: A server component that gets a 401 or 403 redirects to /api/auth/refresh-and-redirect. That route refreshes, sets both cookies on the redirect and sends the visitor back. A guard cookie that lives 10 seconds stops redirect loops.
+structure:
+  tree: |
+    app/                      routes, layouts and the BFF handlers in api/auth
+    src/
+      views/                  one per route
+      widgets/                header, sidebar, bottom bar, modal manager
+      features/               logic for one capability, such as Quiz or Premium
+      experiments/            one folder per A/B test
+      components/             Mantine wrappers, custom components, icons
+      services/api-hooks/     query keys, queries and mutations per domain
+      services/api-client/    one fetch client and a typed module per domain
+      store/                  shared Zustand stores
+      lib/                    cookie and storage wrappers, analytics facade
+      middlewares/            edge handlers composed by one function
+    Web.App/                  Dockerfile and Helm chart
+  notes:
+    - path: views, widgets, features, experiments
+      why: A view is one route. A widget assembles features and components and holds no business logic. A feature owns the logic for one capability, and its own store stays inside it. Each A/B test gets its own folder in experiments, which holds all its files.
+    - path: services/api-hooks and services/api-client
+      why: Each domain has a key factory and a queries file, and most also a mutations file, over a typed endpoint module. Query hooks are built on queryOptions, so a server component can prefetch the same options and hand the cache to the client through dehydrate. The client is one class that adds the Bearer token, times out after 20 seconds and reports failures to Sentry. The BFF has its own instance pointed at /api/, so sign-in calls and API calls share one error and refresh path.
+    - path: app/api/auth
+      why: Seven route handlers, one per auth action. Login, register, Google and Apple share one shape, which forwards to the backend, splits the tokens and sets the cookie. The two refresh routes differ by caller. One answers browser fetches with JSON, and the other answers server renders with a redirect.
+    - path: middlewares
+      why: Three handlers run in order through composeMiddlewares. They do a country lookup, a home page redirect from a saved preference, and a cookie and URL sync. A handler that returns a response ends the chain. The country lookup waits at most 3 seconds, stores the result in a cookie and never blocks the page on failure. The sync handler moves the A/B buckets, the GrowthBook user id and ad click ids between URL and cookies, so they survive the switch from an in-app browser to the system browser.
+    - path: lib and store
+      why: Cookies, storage and analytics are reached through wrappers. Cookies have a client wrapper and a server wrapper, which keeps server and browser code apart. Storage is a set of typed modules, and analytics is a facade over the tag manager service. The 7 shared Zustand stores come from one createStore helper that adds devtools and optional persistence.
+    - path: features/Quiz/configs
+      why: Each funnel is a JSON file next to a Zod schema and a registry. The schema describes the welcome page, the steps, the summary and the paywall route and offer. Step content is a discriminated union over seven types, and a step can carry a showIf condition so a flow branches on an earlier answer. The registry parses all the files when it loads and checks every id, flow name, route, offer type and custom component id against the code's enums.
+tools:
+  title: Routes
+  intro: Three groups, the funnel routes, the app screens and the BFF handlers that share the app's origin.
+  groups:
+    - title: Funnel
+      note: Server components check the quiz id and read the flow config.
+      items:
+        - name: /quiz/:id/welcome-page
+          does: Shows the welcome block of the flow config, starts the A/B entry points and opens the quiz with the paywall route, offer and visual style in the query string.
+        - name: /quiz/:id
+          does: Runs the steps of the flow config, sends a step event to the tag manager after each one, then shows the summary screen.
+        - name: Paywall routes
+          does: The flow config names the paywall route. Server components fetch the plans, and the card form is the payment provider's embedded SDK.
+    - title: App
+      items:
+        - name: /chat
+          does: The character list and the dialog side by side, as parallel routes.
+        - name: /create-character
+          does: Quiz-style character creation with a progress page and a result page.
+        - name: /generate-image
+          does: Image generation for a chosen character.
+        - name: /tokens
+          does: Token packs for purchase.
+        - name: /profile
+          does: The profile and the subscription details.
+    - title: BFF
+      note: Route handlers on the app's own origin.
+      items:
+        - name: /api/auth/login, /register, /google, /apple
+          does: Forward to the backend, set the refresh token cookie and return the access token.
+        - name: /api/auth/refresh
+          does: Exchanges the refresh cookie for a new access token for browser calls.
+        - name: /api/auth/refresh-and-redirect
+          does: Does the same for a server render and redirects back, with a loop guard.
+        - name: /api/auth/logout
+          does: Tells the backend, then deletes the auth cookies even when the backend call fails.
+decisions:
+  - kind: decision
+    title: The refresh token lives only in an httpOnly cookie set by the app's own server
+    why: The backend is a separate service. Route handlers on the app's own origin call it and set the refresh token as an httpOnly cookie, so scripts never see it. They return only the access token, which the client keeps in a readable cookie for the Bearer header.
+  - kind: decision
+    title: Parallel 401s cause one refresh
+    why: The API client keeps a flag and a queue. The first 401 starts one call to /api/auth/refresh, and requests that fail meanwhile wait in the queue and replay with the new token. When a refresh is rejected, the BFF deletes the auth cookies and the client clears its session.
+  - kind: decision
+    title: GrowthBook assigns a bucket once and the profile keeps it
+    why: GrowthBook is asked only at the entry point of a test, by a user id from a cookie. The bucket is written to the up_ab_test URL parameter, mirrored into cookies, reported to the tag manager as an event when it changes, and sent to the backend with sign-up. After sign-up the profile from the backend is the source and a session store feeds useExperiment. By design, GrowthBook only assigns the bucket. Later code reads the stored bucket, so it does not depend on GrowthBook.
+  - kind: decision
+    title: The URL carries the bucket across the in-app browser switch
+    why: When a social-app in-app browser hands the page to the system browser, the URL carries over but the cookies do not. The entry hook writes the bucket into the URL, and when the URL has a bucket and the cookie is missing, the edge middleware restores the cookie. The URL wins over a fresh GrowthBook assignment, which also lets QA force a bucket with a query parameter. Several tests share one parameter, in the form id!value separated by semicolons.
+  - kind: decision
+    title: Funnels are JSON, parsed and cross-checked when they load
+    why: Each flow is a JSON file. Zod parses each one, and the registry then checks the flow id, flow name, paywall route, offer type and custom component ids against the code's enums. A typo fails at module load, before any visitor reaches it. A flow names its own paywall route and offer, so a new funnel is a JSON file, ids in the enums and a registry entry.
+  - kind: decision
+    title: Migrated onto the new layers in ten deployable phases
+    why: The migration plan counted 234 imports between features and split the move into ten phases of one to four pull requests each. They cover browser API wrappers, UI components, API hooks, views, middleware, modals and widgets, barrel cleanup, shared constants and layouts. The plan rates each phase's risk and aims for each to be deployable on its own. The result is views, widgets, query hooks and middlewares in place of the old src/api.
+rules:
+  items:
+    - rule: Browser APIs go through wrappers in lib
+      why: Cookies, storage and analytics behave differently on the server and in the browser. A client and a server wrapper for cookies, typed storage modules and an analytics facade keep that difference in one place.
+      heldBy:
+        - documented in docs/PROJECT_ARCHITECTURE.md
+    - rule: Components never call fetch, and server state comes only from query hooks
+      why: Cache keys, invalidation and loading and error states stay with the hooks, and each domain has one key factory.
+      heldBy:
+        - documented in docs/PROJECT_ARCHITECTURE.md
+    - rule: Quiz flows are valid JSON with known ids, routes and components
+      why: A bad config must fail when it loads, before a visitor sees it.
+      heldBy:
+        - Zod schema with discriminated unions
+        - registry checks against the code's enums, run at module load
+    - rule: The build fails when an environment variable is missing
+      why: Settings are validated once at build, so a missing value fails the build instead of the runtime.
+      heldBy:
+        - Zod schema in next.config.mjs that exits on failure
+    - rule: Releases run as a chain of skills with fixed scripts
+      why: The version bump, release notes, merge, tag and push follow the same steps every time, and the tag push deploys production.
+      heldBy:
+        - skills stage-release, pre-release and release, with model invocation disabled
+        - bash scripts with a narrow tool allowlist
+        - documented in docs/GIT_FLOW.md
+  agents: CLAUDE.md holds the commands, the code conventions and a procedure that writes a release merge commit from the git log. Seven project skills cover quiz work and releases. implement-quiz turns a marketing spec into a quiz config, create-step-type adds a step type, and review-quiz checks a config and only reports. The release chain of stage-release, pre-release and release has model invocation disabled, and each step runs fixed shell scripts under a narrow tool list. The tag push at the end starts the production deploy.
+connections:
+  - to: product-backends
+    label: calls its REST API in the

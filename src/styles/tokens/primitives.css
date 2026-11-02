@@ -1,48 +1,46 @@
 /* Layer 1: raw palettes. The only place color literals may appear.
    Read by themes/ only; components use the semantic roles. */
 :root {
-  /* sand: cream paper */
-  --p-sand-0: #ffffff;
-  --p-sand-50: #f3f1ea;
-  --p-sand-100: #eae7de;
-  --p-sand-200: #e0dcd1;
-  --p-sand-300: #d6d1c4;
-  --p-sand-400: #bdb6a6;
-  --p-sand-600: #5f584d;
-  --p-sand-900: #23201b;
+  /* night: near-black blue, the dark theme */
+  --p-night-950: #070a12;
+  --p-night-900: #0b101c;
+  --p-night-850: #0e1320;
+  --p-night-800: #121a2b;
+  --p-night-700: #1b2234;
+  --p-night-600: #283049;
 
-  /* char: warm charcoal */
-  --p-char-900: #1c1916;
-  --p-char-850: #1f1c19;
-  --p-char-800: #24201c;
-  --p-char-700: #2d2823;
-  --p-char-600: #38322c;
-  --p-char-200: #b3aa9c;
-  --p-char-50: #f2ede4;
+  /* mist: text on night */
+  --p-mist-400: #949bb0;
+  --p-mist-50: #eef1f8;
 
-  /* amber: the one accent */
-  --p-amber-700: #a84d08;
-  --p-amber-400: #e8a33d;
-  --p-amber-300: #f0b05a;
+  /* day: cool paper, the light theme */
+  --p-day-0: #ffffff;
+  --p-day-50: #f6f7fb;
+  --p-day-100: #eef0f6;
+  --p-day-200: #e2e5ee;
+  --p-day-300: #cdd2df;
 
-  /* tones: categories, never fills for buttons */
-  --p-blue-600: #2f5bd3;
-  --p-blue-300: #8fadff;
-  --p-teal-600: #0b7a73;
-  --p-teal-300: #63d3c6;
-  --p-plum-600: #8a3e9e;
-  --p-plum-300: #dba3ea;
-  --p-olive-600: #5e7a1f;
-  --p-olive-300: #b5d46a;
+  /* slate: text on day, and the code block in light */
+  --p-slate-600: #535a6e;
+  --p-slate-950: #0a0d16;
 
-  /* translucent hairlines for the dark theme: char-50 at 10 % and 18 % */
-  --p-char-50-a10: rgb(242 237 228 / 0.1);
-  --p-char-50-a18: rgb(242 237 228 / 0.18);
+  /* cyan: the signal (400 on night, 700 as text on day, 500 only as decorative glow on day) */
+  --p-cyan-400: #3de8ff;
+  --p-cyan-500: #0098b3;
+  --p-cyan-700: #00758c;
 
-  /* shadow color for the light theme: sand-900 at 14 % */
-  --p-sand-900-a14: rgb(35 32 27 / 0.14);
+  /* violet: the second signal, gradients and glows only */
+  --p-violet-400: #9b6bff;
+  --p-violet-600: #6b3fe0;
 
-  /* tone tint strength (share of the tone color mixed into the surface) */
-  --p-tint-light: 12%;
-  --p-tint-dark: 16%;
+  /* company lines: cyan reuses the signal primitives; teal and amber are tuned to pass 4.5:1 as text
+     on every canvas of their theme (teal-400 12.4:1 on night-950, teal-700 5.0:1 on day-50) */
+  --p-teal-400: #2ee6b8;
+  --p-teal-700: #00796b;
+  --p-amber-400: #ffbf3d;
+  --p-amber-700: #965a00;
+
+  /* glow strength: full on night, about a third on day */
+  --p-glow-full: 1;
+  --p-glow-third: 0.34;
 }

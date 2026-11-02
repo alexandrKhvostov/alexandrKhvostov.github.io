@@ -1,0 +1,16 @@
+---
+import DecisionLog from "@/components/blocks/DecisionLog.astro";
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import type { Decision } from "@/lib/types";
+
+interface Props {
+  items: Decision[];
+}
+
+const { items } = Astro.props;
+---
+
+<section data-reveal aria-labelledby="decisions" class="flex flex-col gap-5">
+  <SectionHeading id="decisions" title="Decision log" />
+  <DecisionLog items={items} />
+</section>

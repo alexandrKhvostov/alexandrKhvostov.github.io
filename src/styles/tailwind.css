@@ -22,20 +22,22 @@
   --color-bg: var(--bg);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-fill: var(--accent-fill);
-  --color-on-accent: var(--on-accent);
+  --color-signal: var(--signal);
+  --color-signal-2: var(--signal-2);
+  --color-signal-glow: var(--signal-glow);
   --color-code-bg: var(--code-bg);
   --color-code-ink: var(--code-ink);
-  --color-tone-author: var(--tone-author);
-  --color-tone-runtime: var(--tone-runtime);
-  --color-tone-infra: var(--tone-infra);
-  --color-tone-product: var(--tone-product);
+  --color-code-key: var(--code-key);
+  --color-company-playme: var(--company-playme);
+  --color-company-sysgears: var(--company-sysgears);
+  --color-company-side: var(--company-side);
+  --color-kind-decision: var(--kind-decision);
+  --color-kind-trade-off: var(--kind-trade-off);
+  --color-kind-next: var(--kind-next);
   --color-transparent: transparent;
   --color-current: currentColor;
 
@@ -43,7 +45,6 @@
   --font-*: initial;
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-accent: var(--font-accent);
 
   /* type scale */
   --text-*: initial;
@@ -75,10 +76,10 @@
   --text-small--line-height: var(--text-small--line-height);
   --text-small--letter-spacing: var(--text-small--letter-spacing);
   --text-small--font-weight: var(--text-small--font-weight);
-  --text-eyebrow: var(--text-eyebrow);
-  --text-eyebrow--line-height: var(--text-eyebrow--line-height);
-  --text-eyebrow--letter-spacing: var(--text-eyebrow--letter-spacing);
-  --text-eyebrow--font-weight: var(--text-eyebrow--font-weight);
+  --text-mono: var(--text-mono);
+  --text-mono--line-height: var(--text-mono--line-height);
+  --text-mono--letter-spacing: var(--text-mono--letter-spacing);
+  --text-mono--font-weight: var(--text-mono--font-weight);
 
   /* radius */
   --radius-*: initial;
@@ -107,9 +108,11 @@
   --container-page: var(--page-width);
   --container-prose: var(--prose-width);
 
-  /* depth */
+  /* depth: hairlines carry structure, glow is for diagrams and screens only */
   --shadow-*: initial;
-  --shadow-pop: var(--shadow-pop);
+  --shadow-glow-node: var(--glow-node);
+  --shadow-glow-shot: var(--glow-shot);
+  --shadow-glow-row: var(--glow-row);
 
   /* motion */
   --ease-*: initial;
@@ -117,5 +120,20 @@
   --transition-duration-*: initial;
   --transition-duration-fast: var(--dur-fast);
   --transition-duration-base: var(--dur-base);
-  --transition-duration-slow: var(--dur-slow);
+  --transition-duration-enter: var(--dur-enter);
+}
+
+/* A control that answers a press: colors follow hover at --dur-fast, and on :active it sinks to
+   --press-scale with a short press curve. Replaces transition-colors on buttons, chips and toggles. */
+@utility pressable {
+  touch-action: manipulation;
+  transition-property: color, background-color, border-color, text-decoration-color, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+
+  &:active {
+    transform: scale(var(--press-scale));
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-press);
+  }
 }

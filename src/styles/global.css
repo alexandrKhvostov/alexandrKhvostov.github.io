@@ -1,9 +1,10 @@
 @import "./tokens/primitives.css";
 @import "./tokens/scale.css";
 @import "./fonts.css";
-@import "./themes/warm-light.css";
-@import "./themes/warm-dark.css";
+@import "./themes/signal-dark.css";
+@import "./themes/signal-light.css";
 @import "./tailwind.css";
+@import "./diagram.css";
 
 @layer base {
   html {
@@ -14,7 +15,7 @@
     line-height: var(--text-body--line-height);
     text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
-    scroll-padding-top: var(--space-8);
+    scroll-padding-top: var(--space-9);
   }
 
   body {
@@ -28,8 +29,16 @@
   h1,
   h2,
   h3 {
-    font-weight: 600;
     text-wrap: balance;
+  }
+
+  h1,
+  h2 {
+    font-weight: 700;
+  }
+
+  h3 {
+    font-weight: 600;
   }
 
   p {
@@ -37,7 +46,7 @@
   }
 
   a {
-    color: var(--accent);
+    color: var(--signal);
     text-underline-offset: 3px;
     text-decoration-thickness: 1px;
   }
@@ -60,13 +69,13 @@
   }
 
   ::selection {
-    background-color: var(--accent-fill);
-    color: var(--on-accent);
+    background-color: color-mix(in oklab, var(--signal) 30%, transparent);
+    color: var(--ink);
   }
 
   :focus-visible,
   [data-demo-state="focus"] {
-    outline: var(--ring-width) solid var(--accent);
+    outline: var(--ring-width) solid var(--signal);
     outline-offset: var(--ring-offset);
   }
 
@@ -83,12 +92,131 @@
   }
 }
 
+/* Motion building blocks. Tokens set the timing; components opt in with these data attributes. */
+
+/* Entrance: set --i (0, 1, 2 ...) on each block to stagger it by --stagger. */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-shift));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-enter] {
+  animation: enter var(--dur-enter) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Signal: a short dash runs along a path drawn with pathLength="100". */
+@keyframes signal-run {
+  from {
+    stroke-dashoffset: 14;
+  }
+
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+[data-signal] {
+  stroke-dasharray: 14 86;
+  stroke-linecap: round;
+  animation: signal-run var(--dur-signal) linear infinite;
+}
+
+[data-paused] [data-signal] {
+  animation-play-state: paused;
+}
+
+@keyframes ambient-drift {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(var(--space-7), var(--space-6));
+  }
+}
+
+[data-ambient] {
+  background-image: var(--glow-ambient);
+  animation: ambient-drift var(--dur-ambient) ease-in-out infinite alternate;
+}
+
+/* Reveal: a lower section fades in once when scrolled into view (src/scripts/reveal.ts adds data-revealed).
+   Without scripting everything is simply visible. */
+@media (scripting: enabled) {
+  [data-reveal] {
+    transition:
+      opacity var(--dur-enter) var(--ease-out),
+      transform var(--dur-enter) var(--ease-out);
+  }
+
+  [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(var(--enter-shift));
+  }
+}
+
+/* Page-to-page morph: native cross-document view transitions. Titles carry a view-transition-name
+   (project-<slug>) in the row and in the header, so the title flies from one to the other. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+::view-transition-group(*) {
+  animation-duration: var(--dur-enter);
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-group(root) {
+  animation-duration: var(--dur-base);
+}
+
+/* Same-document transitions (scripts/view-transition.ts sets data-vt while one runs). Filtering: rows
+   glide to their new places on the move curve, rows that leave fade quickly. */
+:root[data-vt="filter"]::view-transition-group(*) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-move);
+}
+
+:root[data-vt="filter"]::view-transition-old(*) {
+  animation-duration: var(--dur-fast);
+}
+
+/* Theme: the whole page is one snapshot, revealed by a circle from the switch (scripts/theme.ts), and
+   nothing else may transition, or every themed color would tween on its own clock. */
+:root[data-vt="theme"] * {
+  view-transition-name: none !important;
+  transition: none !important;
+}
+
+:root[data-vt="theme"]::view-transition-old(root),
+:root[data-vt="theme"]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-fast: 0ms;
     --dur-base: 0ms;
-    --dur-slow: 0ms;
-    --reveal-shift: 0px;
+    --dur-enter: 0ms;
+    --dur-signal: 0ms;
+    --dur-ambient: 0ms;
+    --dur-press: 0ms;
+    --dur-move: 0ms;
+    --dur-theme: 0ms;
+    --press-scale: 1;
+    --stagger: 0ms;
+    --enter-shift: 0px;
   }
 
   html {
@@ -98,8 +226,16 @@
   *,
   *::before,
   *::after {
-    animation-duration: 0ms !important;
-    animation-iteration-count: 1 !important;
+    animation: none !important;
     transition-duration: 0ms !important;
+  }
+
+  [data-signal] {
+    display: none;
+  }
+
+  [data-reveal]:not([data-revealed]) {
+    opacity: 1;
+    transform: none;
   }
 }

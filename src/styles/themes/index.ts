@@ -1,4 +1,4 @@
-export type ThemeId = "warm-light" | "warm-dark";
+export type ThemeId = "signal-dark" | "signal-light";
 
 export interface Theme {
   id: ThemeId;
@@ -9,13 +9,16 @@ export interface Theme {
 
 /** Every theme file in this folder, in switcher order. A new theme = one CSS file + one entry here. */
 export const themes: readonly Theme[] = [
-  { id: "warm-light", label: "Warm light", scheme: "light" },
-  { id: "warm-dark", label: "Warm dark", scheme: "dark" },
+  { id: "signal-dark", label: "Dark", scheme: "dark" },
+  { id: "signal-light", label: "Light", scheme: "light" },
 ];
 
 export const defaultThemeForScheme: Record<"light" | "dark", ThemeId> = {
-  light: "warm-light",
-  dark: "warm-dark",
+  light: "signal-light",
+  dark: "signal-dark",
 };
+
+/** Dark is the default; light is picked on first visit only when the system asks for it. */
+export const defaultTheme: ThemeId = defaultThemeForScheme.dark;
 
 export const themeStorageKey = "theme";

@@ -5,6 +5,7 @@
 - Each statement on the page traces to a line in `research/` (per-project notes with sources in the original repos). When a fact is not there, ask the developer; the answer goes into the research notes first, then onto the page.
 - Role wording, names and what stays off the page come from the decisions in `research/_synthesis.md`. The repo is public: research text reaches git only as reviewed page copy.
 - Copy is plain and specific: what the system does, how, why that way, what comes next. Numbers say what was counted.
+- Every text an agent writes for the site (case copy, page copy, link previews) passes through the `humanizer:humanizer` skill before the developer reviews it.
 - `research/` is git-ignored and exists only on the developer's machine. If it is missing, ask before writing copy.
 
 ## Styling

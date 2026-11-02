@@ -1,0 +1,40 @@
+---
+import CodeBlock from "@/components/blocks/CodeBlock.astro";
+import Fold from "@/components/blocks/Fold.astro";
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import { foldList } from "@/lib/fold";
+import type { Structure } from "@/lib/types";
+
+interface Props {
+  structure: Structure;
+}
+
+const { structure } = Astro.props;
+// Up to 4 notes show in full; a longer list shows 3 and folds the rest.
+const notes = foldList(structure.notes, 3, 4);
+---
+
+<section data-reveal aria-labelledby="structure" class="flex flex-col gap-5">
+  <SectionHeading id="structure" title="Code structure" />
+  <CodeBlock code={structure.tree} label="Folder tree, scrolls sideways when wide" />
+  <ul class="flex flex-col">
+    {notes.shown.map((note) => (
+      <li class="flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0">
+        <code class="w-fit max-w-full break-all">{note.path}</code>
+        <p class="max-w-prose text-muted">{note.why}</p>
+      </li>
+    ))}
+  </ul>
+  {notes.hidden.length > 0 && (
+    <Fold noun="notes">
+      <ul class="flex flex-col">
+        {notes.hidden.map((note) => (
+          <li class="flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0">
+            <code class="w-fit max-w-full break-all">{note.path}</code>
+            <p class="max-w-prose text-muted">{note.why}</p>
+          </li>
+        ))}
+      </ul>
+    </Fold>
+  )}
+</section>

@@ -1,40 +1,81 @@
 ---
 import "@/styles/global.css";
+import SiteFooter from "@/components/sections/SiteFooter.astro";
 import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
-import { defaultThemeForScheme, themes, themeStorageKey } from "@/styles/themes/index";
+import { serializeJsonLd } from "@/lib/seo";
+import {
+  contactId,
+  homeDescription,
+  homePath,
+  ogImageAlt,
+  ogImagePath,
+  pageTitle,
+  siteName,
+  siteRole,
+} from "@/lib/site";
+import { defaultTheme, defaultThemeForScheme, themes, themeStorageKey } from "@/styles/themes/index";
 
 interface Props {
+  /** The full document title. Project pages pass "<Project title> | Alexandr Khvostov". */
   title?: string;
   description?: string;
+  /** Open Graph type: a project page is an article, the rest is a website. */
+  ogType?: "website" | "article";
   /** Keeps the page out of search results (the lab). */
   noindex?: boolean;
+  /** The link preview (path under public/, 1200x630); the home card when not given. */
+  image?: string;
+  imageAlt?: string;
+  /** schema.org data for search engines, written as JSON-LD. */
+  jsonLd?: Record<string, unknown>;
 }
 
 const {
-  title = "Alexandr Khvostov",
-  description = "Architecture notes, work in progress.",
+  title = pageTitle(),
+  description = homeDescription,
+  ogType = "website",
   noindex = false,
+  image = ogImagePath,
+  imageAlt = ogImageAlt,
+  jsonLd,
 } = Astro.props;
 
 const themeIds = themes.map((theme) => theme.id);
-const home = import.meta.env.BASE_URL;
+const canonical = noindex || !Astro.site ? undefined : new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = Astro.site ? new URL(image, Astro.site).href : undefined;
+const current = Astro.url.pathname === homePath ? "page" : undefined;
 ---
 
 <!doctype html>
-<html lang="en" data-theme={defaultThemeForScheme.light}>
+<html lang="en" data-theme={defaultTheme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark light" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteName} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
+    {ogImage && <meta property="og:image:alt" content={imageAlt} />}
+    <meta name="twitter:card" content="summary_large_image" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
-    <link rel="icon" href="data:," />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    {jsonLd && <script type="application/ld+json" is:inline set:html={serializeJsonLd(jsonLd)} />}
     <script
       is:inline
       define:vars={{ themeIds, storageKey: themeStorageKey, bySystemScheme: defaultThemeForScheme }}
     >
-      // Sets data-theme before first paint: the stored choice, else the system scheme.
+      // Sets data-theme before first paint: the stored choice, else dark unless the system asks for light.
       var theme;
       try {
         var stored = localStorage.getItem(storageKey);
@@ -43,23 +84,75 @@ const home = import.meta.env.BASE_URL;
         // Storage blocked: fall through to the system scheme.
       }
       if (!theme) {
-        var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        theme = bySystemScheme[dark ? "dark" : "light"];
+        var light = window.matchMedia("(prefers-color-scheme: light)").matches;
+        theme = bySystemScheme[light ? "light" : "dark"];
       }
       document.documentElement.dataset.theme = theme;
     </script>
   </head>
   <body class="bg-bg text-ink">
-    <header class="sticky top-0 z-10 border-b border-line bg-bg">
-      <div class="mx-auto flex w-full max-w-page items-center justify-between px-gutter py-3">
-        <a href={home} class="font-medium text-ink no-underline">
-          Alexandr Khvostov
+    <div class="ambient-clip" aria-hidden="true">
+      <span class="ambient-glow" data-ambient></span>
+    </div>
+    <header class="topbar sticky top-0 z-10 border-b border-line bg-bg">
+      <div class="mx-auto flex h-full w-full max-w-page items-center justify-between gap-4 px-gutter">
+        <a href={homePath} class="flex min-w-0 flex-col text-ink no-underline">
+          <span class="font-medium whitespace-nowrap">{siteName}</span>
+          <!-- On phones the role would wrap the sticky bar to four lines; the hero and footer carry it there. -->
+          <span class="text-small text-muted max-sm:hidden">{siteRole}</span>
         </a>
-        <ThemeSwitch />
+        <nav aria-label="Site" class="flex items-center gap-3 sm:gap-5">
+          <a
+            href={homePath}
+            aria-current={current}
+            class="nav-link text-small whitespace-nowrap text-muted no-underline hover:text-ink"
+          >
+            All projects
+          </a>
+          <a
+            href={`#${contactId}`}
+            class="text-small whitespace-nowrap text-muted no-underline hover:text-ink"
+          >
+            Contact
+          </a>
+          <ThemeSwitch />
+        </nav>
       </div>
     </header>
-    <main class="mx-auto w-full max-w-page px-gutter">
+    <main class="relative mx-auto w-full max-w-page px-gutter">
       <slot />
     </main>
+    <SiteFooter />
   </body>
 </html>
+
+<style>
+  .topbar {
+    min-height: var(--topbar-height);
+    view-transition-name: site-header;
+  }
+
+  .nav-link[aria-current="page"] {
+    color: var(--ink);
+  }
+
+  /* One slow glow in the corner, behind the content (DESIGN.md section 5): main is positioned, so it paints
+     above this layer. The clip keeps the glow from widening the page. */
+  .ambient-clip {
+    --ambient-size: 28rem;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ambient-glow {
+    position: absolute;
+    top: calc(var(--ambient-size) / -2);
+    right: calc(var(--ambient-size) / -2);
+    width: var(--ambient-size);
+    height: var(--ambient-size);
+    filter: blur(var(--space-6));
+  }
+</style>

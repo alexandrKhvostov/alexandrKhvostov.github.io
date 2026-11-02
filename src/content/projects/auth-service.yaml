@@ -1,0 +1,178 @@
+title: Auth service
+company: playme
+period: "2026"
+order: 9
+role: Designed and built the service.
+disciplines: [backend]
+aiAgents: true
+summary: OAuth authorization server that gives PlayMe's remote MCP servers one Google sign-in, one set of signing keys and one access list.
+glance:
+  - value: "7"
+    label: OAuth and discovery endpoints
+  - value: "4"
+    label: MCP servers sign in through it
+  - value: "0"
+    label: calls to the auth service per MCP request
+stack:
+  - TypeScript
+  - Node.js 22
+  - Express 5
+  - PostgreSQL
+  - jose
+  - Zod
+  - Google OAuth
+  - Docker
+  - Helm
+overview:
+  - PlayMe runs several remote MCP servers that AI clients such as Claude, Cursor and Codex connect to. Without a shared service, each server would need its own Google login, user store, token signing and access list. The auth service holds all of that once. An MCP server only checks a signed token and keeps no user data or signing keys.
+  - Users sign in with Google, limited to the company's Workspace domain. The service checks the user's access to the requested MCP server and issues an RS256 JWT whose audience is that server's URL, so an MCP server that checks the audience rejects a token minted for another server. MCP servers verify the token offline against the service's public key set.
+  - Each MCP server is either open to the whole domain or limited to an allowlist, checked at login, at code exchange and at every refresh. An admin console replaces routine hand-run SQL for managing servers and users. It is the default auth mode of the MCP template, and the quiz builder, the media storage MCP, a marketing MCP and a CMS MCP sign in through it.
+diagram:
+  type: sequence
+  caption: How an AI client logs in at an MCP server, from the first 401 to offline token verification.
+  nodes:
+    - id: client
+      label: AI client
+    - id: mcp
+      label: MCP server
+    - id: auth
+      label: Auth service
+    - id: google
+      label: Google
+  steps:
+    - from: client
+      to: mcp
+      label: Call without token
+      note: The MCP server answers 401 and points to its resource metadata (RFC 9728), which names the auth service as the authorization server.
+    - from: client
+      to: auth
+      label: Discover and register
+      note: The client reads the service metadata (RFC 8414) and registers as a public client with its redirect URIs (RFC 7591).
+    - from: client
+      to: auth
+      label: Authorize with PKCE
+      note: The request carries an S256 code challenge and the MCP server's URL as the resource. The service checks the client, the redirect URI and that the server is registered.
+    - from: auth
+      to: google
+      label: Redirect to sign in
+      note: The user signs in with Google. The service keeps the login state in memory under a random state value that expires after 10 minutes.
+    - from: google
+      to: auth
+      label: Callback with code
+      note: The service exchanges the code server to server, verifies the ID token and the hosted domain, then checks the user's access to this MCP server. A denied user gets 403 before any code is issued.
+    - from: auth
+      to: client
+      label: Redirect with code
+      note: The authorization code is single use and valid for 10 minutes.
+    - from: client
+      to: auth
+      label: Exchange code
+      note: The client sends the code and the PKCE verifier. The service checks the verifier hash and the user's access again, then returns an RS256 access token and a refresh token.
+    - from: client
+      to: mcp
+      label: Call with Bearer JWT
+      note: The token's audience is the MCP server URL from the validated authorize request, never from the token request.
+    - from: mcp
+      to: auth
+      label: Fetch and cache JWKS
+      note: The server caches the keys and refreshes them about hourly, picks one by kid and verifies signature, issuer, audience and expiry. It makes no call to the auth service per request.
+structure:
+  tree: |
+    src/
+      index.ts           loads env, then starts the server
+      env.ts             env schema; admin settings are all-or-none
+      server.ts          Express app, health checks, routers
+      db.ts              Postgres pool
+      well-known/        authorization server metadata and JWKS
+      auth/              the OAuth endpoints
+        jwt.ts, pkce.ts, resource-uri.ts   helpers
+        pending.ts       in-flight logins, in memory per pod
+        store/           OAuthStore interface and Postgres implementation
+      admin/             admin console
+      cron/cleanup.ts    entry point for the cleanup CronJob
+  notes:
+    - path: src/index.ts and src/env.ts
+      why: Env is validated when it is imported, so a bad or partial config exits the process before the server starts. The admin settings are all-or-none.
+    - path: src/auth/store/
+      why: The OAuth handlers call the store directly, with no service layer. OAuthStore is the one interface between them and Postgres.
+    - path: src/auth/pending.ts
+      why: Holds in-flight logins and authorization codes in memory, per pod. Keeping them in memory keeps Redis out of the stack, so the service runs as one replica.
+    - path: src/admin/
+      why: The admin console is its own module with its own session, CSRF check, store, routes and HTML rendering. Pages are rendered on the server and use no JavaScript.
+tools:
+  title: Endpoints
+  intro: Five OAuth endpoints and two discovery endpoints, plus an admin console.
+  groups:
+    - title: OAuth
+      items:
+        - name: POST /auth/register
+          does: Dynamic client registration (RFC 7591). Takes redirect URIs and returns a public client id.
+        - name: GET /auth/authorize
+          does: Starts the login. It needs a PKCE S256 challenge and the MCP server's URL as the resource, checks the client, the redirect URI and that the server is registered, then sends the user to Google.
+        - name: GET /auth/google/callback
+          does: Receives Google's code, verifies the ID token and the hosted domain, checks the user's access to the MCP server, and redirects back to the client with an authorization code.
+        - name: POST /auth/token
+          does: Exchanges an authorization code with its PKCE verifier, or a refresh token, for an RS256 access token and a new refresh token. Access is checked again each time.
+        - name: POST /auth/revoke
+          does: Deletes a refresh token (RFC 7009) and always answers 200.
+    - title: Discovery
+      items:
+        - name: GET /.well-known/oauth-authorization-server
+          does: Authorization server metadata (RFC 8414) with the issuer, the endpoint URLs and the supported grants. PKCE S256 is the only method.
+        - name: GET /.well-known/jwks.json
+          does: The public signing keys, cacheable for an hour. MCP servers verify tokens against them offline.
+    - title: Admin console
+      items:
+        - name: Admin console
+          does: A server-rendered console for one admin account. It adds and removes MCP servers, switches each between open and allowlist, and grants or revokes users. Removing a server or revoking a user also deletes the refresh tokens.
+decisions:
+  - kind: decision
+    title: One authorization server for all MCP servers
+    why: Each MCP team would otherwise build Google login, token signing and a user store. One service means one identity provider integration, one key set and one access list, and MCP servers only verify tokens.
+  - kind: decision
+    title: Audience bound to the MCP server URL
+    why: The resource is checked at authorize time against the registered servers and carried on the server side into token signing. A client is not tied to one server at registration because a single client may talk to several.
+  - kind: decision
+    title: Offline JWTs, database-backed refresh tokens
+    why: Access tokens are verified through the public keys, so MCP servers stay stateless and the auth service is not on the request path. Refresh tokens are rotating opaque rows in Postgres, which allows server-side revocation and an access re-check on every refresh.
+  - kind: decision
+    title: One replica, no Redis
+    why: Pending logins and authorization codes live in process memory, and logins are rare, so one replica was enough and avoids running Redis. MCP servers verify tokens offline, so tokens already issued keep working until they expire.
+rules:
+  items:
+    - rule: Only the corporate VPN and Anthropic can reach the service
+      why: The production ingress accepts only the company VPN's IP and Anthropic's published outbound IPs, so sign-in and token endpoints are closed to the rest of the internet. Cursor and Codex connect from an employee's machine on the VPN, and the Claude connector connects from Anthropic's cloud.
+      heldBy:
+        - ingress IP allowlist
+    - rule: A bad or partial configuration stops the service at startup
+      why: The service never runs half-configured. Admin settings are all-or-none so the Helm chart can ship before the secrets exist, and a bad signing key fails at load, not on the first login.
+      heldBy:
+        - Zod env schema
+        - key import at module load
+    - rule: Revoking a user or removing an MCP server deletes their refresh tokens in the same transaction
+      why: A revoked user must not be able to refresh.
+      heldBy:
+        - DB transaction
+    - rule: A resource URL has exactly one canonical form
+      why: Rows are compared by SQL equality, so a second normalizer would make a registered MCP server look unknown.
+      heldBy:
+        - unit tests
+        - documented rule
+    - rule: The admin console has no JavaScript, a strict CSP and escaped output
+      why: It keeps the attack surface small. Destructive actions use a server-rendered confirmation page, and every state-changing POST after sign-in is checked for a CSRF token.
+      heldBy:
+        - CSP header
+        - escaping test
+        - CSRF check in code
+  agents: AGENTS.md is the single source for all coding tools. CLAUDE.md and the skills folder for Claude are symlinks, and a pre-commit check fails on drift. Five skills cover pull requests and the release flow.
+connections:
+  - to: quiz-builder
+    label: issues tokens for
+  - to: media-storage
+    label: issues tokens for
+  - to: cms-mcp
+    label: issues tokens for
+  - to: mcp-template
+    label: is the default sign-in for servers built from the
+  - to: ai-clients
+    label: signs in users of

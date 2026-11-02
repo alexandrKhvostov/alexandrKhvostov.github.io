@@ -1,0 +1,67 @@
+---
+import ProjectRow from "@/components/blocks/ProjectRow.astro";
+import Chip from "@/components/ui/Chip.astro";
+import { filterOptions } from "@/lib/filters";
+import { groupByCompany } from "@/lib/projects";
+import type { Project } from "@/lib/types";
+
+interface Props {
+  projects: Project[];
+}
+
+const { projects } = Astro.props;
+const groups = groupByCompany(projects);
+const options = filterOptions(projects);
+
+// Literal class names so Tailwind sees them.
+const dots = {
+  playme: "bg-company-playme",
+  sysgears: "bg-company-sysgears",
+  side: "bg-company-side",
+};
+---
+
+<div class="flex flex-col gap-6">
+  {options.length > 1 && (
+    <div
+      hidden
+      data-filters
+      role="group"
+      aria-label="Filter projects by discipline"
+      data-enter
+      style="--i: 2"
+      class="flex flex-wrap items-center gap-2"
+    >
+      {options.map((option) => (
+        <Chip variant="filter" pressed={option.key === "all"} data-filter={option.key}>
+          {option.label}
+        </Chip>
+      ))}
+      <p role="status" data-filter-count class="ml-2 text-small text-muted">
+        {projects.length} {projects.length === 1 ? "project" : "projects"}
+      </p>
+    </div>
+  )}
+  <!-- The rows have no entrance animation: their titles are targets of the page morph. -->
+  <div class="flex flex-col gap-7">
+    {groups.map((group) => (
+      <section data-company-group aria-labelledby={`group-${group.company}`} class="flex flex-col gap-3">
+        <h2 id={`group-${group.company}`} class="flex items-center gap-3 text-h3">
+          <span aria-hidden="true" class:list={["size-2 rounded-pill", dots[group.company]]} />
+          {group.label}
+        </h2>
+        <ul class="flex flex-col gap-3">
+          {group.projects.map((project) => (
+            <ProjectRow project={project} />
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+</div>
+
+<script>
+  import { initFilters } from "@/scripts/filters";
+
+  initFilters();
+</script>

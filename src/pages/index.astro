@@ -1,10 +1,41 @@
 ---
+import ContactLinks from "@/components/blocks/ContactLinks.astro";
+import ProjectList from "@/components/sections/ProjectList.astro";
+import { loadProjects } from "@/content/load";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { personJsonLd } from "@/lib/seo";
+import { homeDescription, homeTitle, siteIntro, siteLocation, siteName, siteRole } from "@/lib/site";
+
+const projects = await loadProjects();
+const person = Astro.site ? personJsonLd(Astro.site.href) : undefined;
 ---
 
-<BaseLayout>
-  <section class="py-section">
-    <h1 class="text-display">Alexandr Khvostov</h1>
-    <p class="mt-4 text-lead text-muted">Architecture notes, work in progress</p>
-  </section>
+<BaseLayout title={homeTitle} description={homeDescription} jsonLd={person}>
+  <div class="flex flex-col gap-section pt-7 pb-section">
+    <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-3">
+        <h1 data-enter style="--i: 0" class="text-display">
+          {siteName}
+        </h1>
+        <p data-enter style="--i: 1" class="text-h3 text-ink">
+          {siteRole}
+        </p>
+      </div>
+      <p data-enter style="--i: 2" class="max-w-prose text-lead">
+        {siteIntro}
+      </p>
+      <p data-enter style="--i: 2" class="text-small text-muted">
+        {siteLocation}
+      </p>
+      <div data-enter style="--i: 3">
+        <ContactLinks />
+      </div>
+    </div>
+    <section aria-labelledby="projects" class="flex flex-col gap-6">
+      <h2 id="projects" class="text-h2">
+        Projects
+      </h2>
+      <ProjectList projects={projects} />
+    </section>
+  </div>
 </BaseLayout>

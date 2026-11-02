@@ -1,0 +1,40 @@
+---
+interface Props {
+  /**
+   * stack: technology name, mono. discipline: kind of work, pill. ai: the AI agents badge.
+   * held: what holds a rule, mono. filter: a toggle button, pressed = filled.
+   */
+  variant?: "stack" | "discipline" | "ai" | "held" | "filter";
+  /** filter only: the chosen state, written to aria-pressed. */
+  pressed?: boolean;
+  class?: string;
+  [attr: string]: unknown;
+}
+
+const { variant = "stack", pressed = false, class: className, ...rest } = Astro.props;
+
+const base = "inline-flex items-center whitespace-nowrap";
+const variants = {
+  stack: "rounded-sm border border-line bg-surface-1 px-2 py-1 font-mono text-mono text-ink",
+  held: "rounded-sm border border-line bg-surface-2 px-2 py-1 font-mono text-mono text-ink",
+  discipline: "rounded-pill border border-line px-3 py-1 text-small text-muted",
+  ai: "rounded-pill border border-signal-2 px-3 py-1 font-mono text-mono text-ink",
+  filter:
+    "rounded-pill border border-line px-4 py-2 text-small text-ink pressable hover:bg-surface-2 aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg aria-pressed:hover:bg-ink",
+};
+---
+
+{variant === "filter" ? (
+  <button
+    type="button"
+    aria-pressed={pressed ? "true" : "false"}
+    class:list={[base, variants.filter, className]}
+    {...rest}
+  >
+    <slot />
+  </button>
+) : (
+  <span class:list={[base, variants[variant], className]} {...rest}>
+    <slot />
+  </span>
+)}

@@ -1,0 +1,25 @@
+---
+import Chip from "@/components/ui/Chip.astro";
+import type { Rule } from "@/lib/types";
+
+interface Props {
+  items: Rule[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="flex flex-col">
+  {items.map((item) => (
+    <li class="flex flex-col gap-2 border-t border-line py-5 first:border-t-0 first:pt-0">
+      <h3 class="text-h3">{item.rule}</h3>
+      <p class="max-w-prose text-muted">{item.why}</p>
+      <p class="flex flex-wrap items-center gap-2">
+        <span class="text-small text-muted">Held by</span>
+        {item.heldBy.map((holder) => (
+          <Chip variant="held">{holder}</Chip>
+        ))}
+      </p>
+    </li>
+  ))}
+</ul>

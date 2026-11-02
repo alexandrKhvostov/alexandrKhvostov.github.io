@@ -1,0 +1,209 @@
+title: Dualio web funnels
+company: playme
+period: "2026"
+order: 4
+role: Built and led the web funnel app.
+disciplines: [frontend]
+aiAgents: false
+summary: Dualio's web funnel, one of three PlayMe funnel apps built on one structure and one set of rules. It renders quiz and paywall configs and takes payment.
+glance:
+  - value: up to 120
+    label: subscriptions a day through the funnel
+  - value: "3"
+    label: funnel apps built on this structure and these rules
+  - value: "0"
+    label: web releases for a new funnel
+stack:
+  - TypeScript
+  - React 19
+  - Vite
+  - Tailwind CSS 4
+  - React Router 7
+  - TanStack Query
+  - Zustand
+  - Zod
+  - openapi-fetch
+  - Solidgate
+  - Sentry
+  - AWS Amplify
+  - Biome
+overview:
+  - Dualio is an AI photo and video app, and this funnel is built for paid ad traffic. A visitor lands on a quiz, answers a few questions, signs up with an email, sees a paywall, pays on the web and is sent to the app store. Marketers produce the quiz and the paywall as JSON configs, with an AI agent working through the quiz builder, so a new funnel needs no web release. PlayMe built three funnel apps this way, with the same layers, packages and agent rules. The site's home page is an entry point; the product lives in the funnel itself (the quiz, the paywall, checkout and onboarding).
+  - The app is a thin host. It loads a config from a CDN folder per environment, validates it with the Zod schemas of the quiz and paywall packages, and hands the packages their data provider, analytics, sign-in and navigation. The packages draw every step. The app supplies the backend calls and the tracking.
+  - The packages come from the quiz library, and the configs are the same config files the quiz builder saves. After payment, onboarding offers an upsell and then opens the app store through an AppsFlyer link. The link carries the sale's transaction id, so the Dualio app can tie the new user to the web sale in analytics. The repo also holds the signed-in app for videos, avatars and subscriptions.
+diagram:
+  type: sequence
+  caption: One visit, from the country lookup to the app store link.
+  nodes:
+    - id: quiz
+      label: Quiz page
+    - id: cdn
+      label: Config CDN
+    - id: backend
+      label: Dualio backend
+    - id: paywall
+      label: Paywall page
+    - id: onboarding
+      label: Onboarding
+    - id: mobile
+      label: Dualio app
+  steps:
+    - from: quiz
+      to: backend
+      label: Country lookup
+      note: The app asks the backend for the visitor's country and caches the answer in the browser. The quiz page waits for it, because the country picks which config file to load.
+    - from: quiz
+      to: cdn
+      label: "Fetch config, @us first"
+      note: "A US visitor requests the variant file first. If that fails, the app logs a Sentry warning and requests the default file. Every other country goes straight to the default file."
+    - from: cdn
+      to: quiz
+      label: Config JSON
+      note: The quiz page validates the JSON with the quiz package's Zod schema, and a bad file throws and is reported to Sentry. The config is cached for the session, and the paywall config it points to is prefetched while the quiz runs.
+    - from: quiz
+      to: backend
+      label: Register by email
+      note: The registration step posts name, email, marketing consent and attribution data such as UTMs and ad click ids, then stores the returned tokens. The password is set later, in onboarding.
+    - from: quiz
+      to: paywall
+      label: Hand over to paywall
+      note: When the quiz ends, the app opens the paywall named in the quiz config and keeps the query string. Answers marked as traits sit in a session store, and the paywall reads them to personalize its sections.
+    - from: paywall
+      to: backend
+      label: Plans and payment intent
+      note: The paywall package renders the plan chooser and the Solidgate card form. The app supplies the plan pack, the payment intent and the status check from the backend.
+    - from: paywall
+      to: onboarding
+      label: Open onboarding
+      note: On success the app marks the cached user as subscribed, and the package navigates to the success route named in the paywall config. The first onboarding steps confirm the purchase and ask for a password, which is skipped when registration is already complete.
+    - from: onboarding
+      to: backend
+      label: Upsell charge
+      note: The upsell step loads the offers from the backend and records which were shown or skipped. A charge goes to the buyer's saved card on the backend, and the app polls its status.
+    - from: onboarding
+      to: mobile
+      label: Open app store link
+      note: The download step opens an AppsFlyer link for the visitor's platform. The link carries the sale's transaction id, so the Dualio app can tie the new user to the web sale in analytics.
+structure:
+  tree: |
+    src/
+      App.tsx                  route table only
+      layouts/                 base layout and the standalone funnel layout
+      views/                   one per route, including the quiz and paywall hosts
+      widgets/                 composed blocks with no business logic of their own
+      features/                logic for one capability, such as Onboarding
+      components/              shadcn primitives, plain components, icons
+      services/api-hooks/      TanStack Query hooks and key factories per domain
+      services/api-client/     typed transport per domain, one client with auth and one public
+      store/                   shared Zustand state (the auth store)
+      lib/                     typed storage modules, traits store, Sentry and AppsFlyer wrappers
+      config/                  environment settings
+      types/                   generated API types and domain models
+  notes:
+    - path: views, widgets, features
+      why: A view is one route. A widget composes UI and takes its logic from features. A feature owns the logic for one capability and may keep its own local store. Onboarding's step list is fixed when the flow mounts, so a change in the user's state cannot reshuffle steps midway.
+    - path: services/api-hooks and services/api-client
+      why: Server state reaches the UI through TanStack Query hooks, with a key factory per domain, such as one for quiz and paywall configs by id and variant. The hooks call API clients built on openapi-fetch. Their types are generated from the backend's Swagger at every build, so a backend change that breaks a typed call fails the build.
+    - path: store
+      why: Client state lives in Zustand. A shared auth store seeds the cached user query. Onboarding keeps its own local store for the current step and the password. Server data stays in queries.
+    - path: lib/storage
+      why: Browser storage goes through small typed modules, one per concern. They cover the tokens, the cached user, the visitor's country, UTM parameters, page views and a flag for the credentials email. Each module keeps its key and its parse guard private. The quiz answers sit in a traits store over sessionStorage, which carries them from the quiz to the paywall.
+    - path: services/analytics-service and services/gtm-service
+      why: Two adapters for attribution. One normalizes ad click ids into a cookie and rewrites the URL once, and the other holds about 60 files of typed event builders that push to the Google Tag Manager dataLayer with the stored UTMs merged in. Ad pixels run in the tag manager, not in the app.
+    - path: views/QuizView and views/Paywall
+      why: The host adapters. They pass the config, data provider, analytics, sign-in and navigation to the quiz and paywall packages and render no step of their own. A new step type or paywall section goes into the packages, not into this repo.
+tools:
+  title: Routes
+  intro: The funnel is three standalone routes, loaded lazily. The rest is the signed-in app and the public pages.
+  groups:
+    - title: Funnel
+      items:
+        - name: /quiz/:quizId
+          does: Loads the quiz config for the visitor's country and renders it. It needs no login, and the registration step creates the user.
+        - name: /paywall/:paywallId
+          does: Renders the paywall config the quiz points to, fetches the plans and takes the payment. It needs the user the quiz created.
+        - name: /onboarding/:variant
+          does: Runs after payment. The app variant has four steps, purchase, password, upsell and download. A course variant ends in course access instead of the download step.
+    - title: Signed-in app
+      note: Behind a login check and a subscription check.
+      items:
+        - name: Videos
+          does: Creates a video and lists the user's videos.
+        - name: Avatars
+          does: Manages the user's avatars.
+        - name: Profile
+          does: Shows the profile and manages the subscription.
+    - title: Public pages
+      items:
+        - name: /
+          does: Landing page.
+        - name: /login, /signup, /magic-link
+          does: Sign-in and sign-up. The magic link signs the user in by exchanging a code from the link.
+decisions:
+  - kind: decision
+    title: The funnel renders only in pinned packages
+    why: The quiz and the paywall are drawn by the quiz library's packages, pinned to exact versions. The app gives them a data provider, analytics, navigation and sign-in, and the packages ship no router or HTTP client. A funnel changes without touching this repo, and the same runtime can serve other apps.
+  - kind: decision
+    title: Configs and media come through a CDN, with caching on top
+    why: Quiz and paywall configs and their media are served from S3 behind CloudFront. There is one folder per environment. After a promotion to production the quiz builder asks CloudFront to invalidate the promoted files. In the app, a loaded config stays in the query cache for the session, the paywall config is prefetched while the quiz runs, and onboarding preloads the images of the next step.
+  - kind: decision
+    title: Remote configs are validated and reported to Sentry
+    why: Every config is parsed with the package's Zod schema before anything renders. JSON errors, HTTP errors and schema errors each get their own message. A missing regional variant is reported as a warning and a missing default config as an error, with tags for the config type, id and variant and a deterministic fingerprint, so alerts group per config.
+  - kind: decision
+    title: The API is typed from the backend's Swagger
+    why: The types are generated from the backend's Swagger and used by openapi-fetch. The generated file is git-ignored and regenerated at every Amplify build before the type check, so it cannot go stale in git. A backend change that breaks a typed call fails the web build instead of reaching production.
+  - kind: decision
+    title: One shared refresh for 401 responses
+    why: The auth middleware adds the bearer token. On a 401 it waits for a single shared refresh promise and replays the original request with the new token, so concurrent failures cause one refresh. The refresh call goes through a separate public client without the middleware, so a failing refresh cannot trigger another one. If the refresh fails, the tokens are cleared and the user goes to login.
+  - kind: decision
+    title: UTM parameters are captured before React renders
+    why: UTM parameters are read and stored before React renders, and ad click ids are normalized and the URL is rewritten once when the app mounts. Attribution survives the hops from ad to quiz, paywall and onboarding, and the stored UTMs are merged into every analytics event.
+rules:
+  items:
+    - rule: Layers import only downward
+      why: App, layouts, views, widgets, features, components, api-hooks, api-client, store, lib, config and types each have one job. A change in a lower layer does not pull UI code into it.
+      heldBy:
+        - documented in AGENTS.md and PROJECT_ARCHITECTURE.md
+        - CodeRabbit path instruction that flags layer violations
+    - rule: Data fetching goes through api-hooks, and components never call the API client
+      why: Caching, invalidation and loading and error states stay in one place, and query keys come from the domain's key factory.
+      heldBy:
+        - documented in AGENTS.md and PROJECT_ARCHITECTURE.md
+        - CodeRabbit path instruction that flags bare fetch calls in components
+    - rule: Server state lives in queries, not in Zustand
+      why: One cache owns server data, so two copies cannot drift apart. Zustand holds only client state.
+      heldBy:
+        - documented in AGENTS.md
+        - CodeRabbit path instruction
+    - rule: Browser storage only through typed modules in lib/storage
+      why: Each key and its parse guard live in one file, so logging, fallbacks or a swap of the storage happen in one place.
+      heldBy:
+        - documented in AGENTS.md and PROJECT_ARCHITECTURE.md
+    - rule: Environment variables are read only in config/
+      why: config/ lists the settings the app depends on, and secrets stay out of client-visible variables.
+      heldBy:
+        - documented in PROJECT_ARCHITECTURE.md
+        - CodeRabbit path instruction that flags secrets in VITE_ variables
+    - rule: Generated API types come from the backend's Swagger, not from hand edits
+      why: The types must match the backend's Swagger, so a hand edit would hide a real mismatch.
+      heldBy:
+        - generated at build and git-ignored
+    - rule: Funnel rendering stays in the packages, and new step types and paywall sections go to the package repo
+      why: The two host views stay thin adapters, so a funnel changes without a release of this app.
+      heldBy:
+        - documented in AGENTS.md
+  agents: AGENTS.md and the architecture doc give agents a layer map and a litmus test for where code goes. CodeRabbit has path instructions per file type and config file, tuned with a confidence threshold and a cap on nits. The release skills have model invocation disabled and a narrow tool list, and the scripts behind them check for a clean tree and the right branch. The pull request step is a skill too, and the release and pull request skills are pinned in skills-lock.json.
+connections:
+  - to: quiz-library
+    label: renders its quiz and paywall with packages from the
+  - to: quiz-builder
+    label: renders configs saved through the
+  - to: cloudfront
+    label: fetches configs through
+  - to: product-backends
+    label: calls the Dualio REST API in the
+  - to: dualio-app
+    label: hands buyers over to the
+links:
+  - label: Open a live funnel
+    url: https://dualio.ai/quiz/flow5gl
