@@ -8,12 +8,12 @@ const { noun } = Astro.props;
 ---
 
 <!-- Native details: works without scripts, and find-in-page opens it to show a match. -->
-<details class="fold flex flex-col gap-3">
-  <summary class="fold-summary w-fit cursor-pointer list-none rounded-sm border border-line-strong px-4 py-2 text-small font-medium text-ink transition-colors duration-fast ease-out hover:bg-surface-2">
+<details class="fold">
+  <summary class="fold-summary w-fit cursor-pointer list-none rounded-sm border border-line-strong px-4 py-2 text-small font-medium text-ink pressable hover:bg-surface-2">
     <span class="fold-closed">Show all {noun}</span>
     <span class="fold-open">Show fewer {noun}</span>
   </summary>
-  <div class="flex flex-col gap-5 pt-3">
+  <div class="fold-body flex flex-col gap-5 pt-3">
     <slot />
   </div>
 </details>
@@ -30,5 +30,33 @@ const { noun } = Astro.props;
 
   .fold[open] .fold-open {
     display: inline;
+  }
+
+  /* The rest of the list opens to its own height and fades in. Browsers without ::details-content
+     (or interpolate-size) open it at once, as before. The details stays display: block: as a flex
+     container Chrome does not tween its ::details-content. */
+  .fold {
+    interpolate-size: allow-keywords;
+  }
+
+  .fold::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size var(--dur-move) var(--ease-move),
+      content-visibility var(--dur-move) allow-discrete;
+  }
+
+  .fold[open]::details-content {
+    block-size: auto;
+  }
+
+  .fold-body {
+    opacity: 0;
+    transition: opacity var(--dur-move) var(--ease-move);
+  }
+
+  .fold[open] .fold-body {
+    opacity: 1;
   }
 </style>

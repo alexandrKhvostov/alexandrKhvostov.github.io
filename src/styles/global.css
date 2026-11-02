@@ -180,6 +180,30 @@
   animation-duration: var(--dur-base);
 }
 
+/* Same-document transitions (scripts/view-transition.ts sets data-vt while one runs). Filtering: rows
+   glide to their new places on the move curve, rows that leave fade quickly. */
+:root[data-vt="filter"]::view-transition-group(*) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-move);
+}
+
+:root[data-vt="filter"]::view-transition-old(*) {
+  animation-duration: var(--dur-fast);
+}
+
+/* Theme: the whole page is one snapshot, revealed by a circle from the switch (scripts/theme.ts), and
+   nothing else may transition, or every themed color would tween on its own clock. */
+:root[data-vt="theme"] * {
+  view-transition-name: none !important;
+  transition: none !important;
+}
+
+:root[data-vt="theme"]::view-transition-old(root),
+:root[data-vt="theme"]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-fast: 0ms;
@@ -187,6 +211,10 @@
     --dur-enter: 0ms;
     --dur-signal: 0ms;
     --dur-ambient: 0ms;
+    --dur-press: 0ms;
+    --dur-move: 0ms;
+    --dur-theme: 0ms;
+    --press-scale: 1;
     --stagger: 0ms;
     --enter-shift: 0px;
   }

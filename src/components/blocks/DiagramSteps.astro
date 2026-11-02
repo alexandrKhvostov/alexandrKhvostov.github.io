@@ -25,7 +25,7 @@ const labelOf = (id: string) => nodes.find((node) => node.id === id)?.label ?? i
         type="button"
         data-step-button
         aria-controls={`${idPrefix}-note-${index}`}
-        class="step-button flex w-full items-start gap-3 rounded-md p-3 text-left transition-colors duration-fast ease-out hover:bg-surface-2"
+        class="step-button flex w-full items-start gap-3 rounded-md p-3 text-left pressable hover:bg-surface-2"
       >
         <span aria-hidden="true" class="step-number font-mono text-mono">
           {index + 1}
@@ -40,13 +40,18 @@ const labelOf = (id: string) => nodes.find((node) => node.id === id)?.label ?? i
           </span>
         </span>
       </button>
-      <p
-        id={`${idPrefix}-note-${index}`}
-        data-step-note
-        class="step-note max-w-prose px-3 pb-3 text-small text-muted"
-      >
-        {step.note}
-      </p>
+      <!-- The wrapper's single grid row tweens between 0fr and 1fr, so the note opens to its own height. -->
+      <div class="step-note-wrap">
+        <div class="step-note-clip">
+          <p
+            id={`${idPrefix}-note-${index}`}
+            data-step-note
+            class="step-note max-w-prose px-3 pb-3 text-small text-muted"
+          >
+            {step.note}
+          </p>
+        </div>
+      </div>
     </li>
   ))}
 </ol>
@@ -92,8 +97,40 @@ const labelOf = (id: string) => nodes.find((node) => node.id === id)?.label ?? i
     color: var(--signal);
   }
 
-  /* Once the script runs, only the chosen step shows its note. Without it every note stays readable. */
+  /* A wide button: a full --press-scale would move its far edge too much. */
+  .step-button {
+    --press-scale: 0.99;
+  }
+
+  /* Once the script runs, only the chosen step shows its note: the next note opens while the last one
+     closes, so the list moves in one motion instead of jumping. Without the script every note stays open.
+     A closed note is also hidden from screen readers; visibility flips only after it has closed. */
+  .step-note-wrap {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows var(--dur-move) var(--ease-move);
+  }
+
+  .step-note-clip {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .step-note {
+    transition:
+      opacity var(--dur-move) var(--ease-move),
+      visibility 0s;
+  }
+
+  :global([data-diagram][data-enhanced]) .step:not([data-active]) .step-note-wrap {
+    grid-template-rows: 0fr;
+  }
+
   :global([data-diagram][data-enhanced]) .step:not([data-active]) .step-note {
-    display: none;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity var(--dur-fast) var(--ease-out),
+      visibility 0s linear var(--dur-move);
   }
 </style>

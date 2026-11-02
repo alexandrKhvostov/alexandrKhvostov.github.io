@@ -122,3 +122,18 @@
   --transition-duration-base: var(--dur-base);
   --transition-duration-enter: var(--dur-enter);
 }
+
+/* A control that answers a press: colors follow hover at --dur-fast, and on :active it sinks to
+   --press-scale with a short press curve. Replaces transition-colors on buttons, chips and toggles. */
+@utility pressable {
+  touch-action: manipulation;
+  transition-property: color, background-color, border-color, text-decoration-color, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+
+  &:active {
+    transform: scale(var(--press-scale));
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-press);
+  }
+}

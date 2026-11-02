@@ -1,3 +1,4 @@
+import { durationToken, easingToken, runViewTransition } from "@/scripts/view-transition";
 import { defaultTheme, themes, themeStorageKey, type ThemeId } from "@/styles/themes/index";
 
 const root = document.documentElement;
@@ -28,6 +29,25 @@ export function applyTheme(id: ThemeId): void {
   document.dispatchEvent(new CustomEvent("themechange", { detail: { id } }));
 }
 
+/** The new theme spreads as a circle from the switch that was pressed (a rare action, so it may show off). */
+function switchFrom(button: HTMLElement, id: ThemeId): void {
+  const box = button.getBoundingClientRect();
+  const x = box.left + box.width / 2;
+  const y = box.top + box.height / 2;
+  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const transition = runViewTransition("theme", () => applyTheme(id));
+  transition?.ready.then(() => {
+    root.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+      {
+        duration: durationToken("--dur-theme"),
+        easing: easingToken("--ease-enter"),
+        pseudoElement: "::view-transition-new(root)",
+      },
+    );
+  });
+}
+
 function renderSwitch(button: HTMLElement): void {
   const current = themes.find((theme) => theme.id === currentTheme());
   const next = themes.find((theme) => theme.id === nextTheme(currentTheme()));
@@ -43,7 +63,7 @@ export function initThemeSwitches(): void {
   const buttons = document.querySelectorAll<HTMLElement>("[data-theme-switch]");
   const renderAll = () => buttons.forEach(renderSwitch);
   buttons.forEach((button) => {
-    button.addEventListener("click", () => applyTheme(nextTheme(currentTheme())));
+    button.addEventListener("click", () => switchFrom(button, nextTheme(currentTheme())));
   });
   document.addEventListener("themechange", renderAll);
   renderAll();

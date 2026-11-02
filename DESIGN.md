@@ -161,20 +161,29 @@ Prose width 68ch. Weights in use: 400, 600, 700. Labels are sentence case; no up
 
 ## 5. Motion
 
-| Token           | Value                       | Use                                  |
-| --------------- | --------------------------- | ------------------------------------ |
-| `--dur-fast`    | 150ms                       | hover, press, color changes          |
-| `--dur-base`    | 220ms                       | panels, theme switch                 |
-| `--dur-enter`   | 500ms                       | entrance of a block                  |
-| `--stagger`     | 70ms                        | delay between blocks in one entrance |
-| `--dur-signal`  | 2400ms                      | one signal run along a diagram edge  |
-| `--ease-out`    | cubic-bezier(.2, .7, .2, 1) | almost everything                    |
-| `--enter-shift` | 10px                        | upward drift on entrance             |
+| Token           | Value                            | Use                                  |
+| --------------- | -------------------------------- | ------------------------------------ |
+| `--dur-fast`    | 150ms                            | hover, press, color changes          |
+| `--dur-base`    | 220ms                            | panels, theme switch                 |
+| `--dur-enter`   | 500ms                            | entrance of a block                  |
+| `--stagger`     | 40ms                             | delay between blocks in one entrance |
+| `--dur-signal`  | 2400ms                           | one signal run along a diagram edge  |
+| `--ease-out`    | cubic-bezier(.2, .7, .2, 1)      | almost everything                    |
+| `--dur-press`   | 120ms                            | a control sinking on press           |
+| `--dur-move`    | 250ms                            | a note or list opening, rows gliding |
+| `--dur-theme`   | 450ms                            | the theme circle from its switch     |
+| `--ease-press`  | cubic-bezier(.25, .46, .45, .94) | press feedback                       |
+| `--ease-move`   | cubic-bezier(.25, 1, .5, 1)      | opening, sliding, gliding            |
+| `--ease-enter`  | cubic-bezier(.22, 1, .36, 1)     | the theme circle, the Copied label   |
+| `--press-scale` | 0.97                             | how far a pressed control sinks      |
+| `--enter-shift` | 10px                             | upward drift on entrance             |
 
 - **Entrance, once per page:** the header and the first screen of blocks fade and rise in sequence (`--stagger`). Lower sections appear once when scrolled into view. Nothing re-animates on scroll back.
 - **Signal:** on diagrams, a light runs along each active edge from source to target, showing the direction of data. It pauses when the diagram is off screen.
 - **Ambient glow:** one blurred glow drifts slowly in the page corner (9s, alternate). One per page.
-- **Answers to actions:** selecting a diagram step lights its message and node; hovering a project row lifts its border to `--signal-2` with a soft glow.
+- **Answers to actions:** selecting a diagram step lights its message and node and opens its note while the last one closes; hovering a project row lifts its border to `--signal-2` with a soft glow. Buttons, chips, steps and toggles use the `pressable` utility and sink to `--press-scale` on press (a wide step button only to 0.99). "Show all" opens the rest of a list to its height. Copying a section link turns `#` into a check with "Copied" beside it.
+- **View transitions in the page:** filtering the list glides the remaining rows to their places; switching the theme reveals the new one as a circle from the switch. Both run only where the browser supports them and motion is not reduced (`scripts/view-transition.ts`).
+- **Left out on purpose:** counting-up glance numbers (the header already has its entrance), lifting rows on hover (hovered too often), parallax, motion in the top bar or the contents column.
 - `prefers-reduced-motion: reduce` sets durations to 0, stops the signal and the ambient drift, and shows everything in place.
 
 ---

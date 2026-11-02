@@ -80,6 +80,14 @@
   --dur-signal: 2400ms;
   --dur-ambient: 9000ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* answers to actions: a press, a panel that opens, a theme that spreads from its switch */
+  --dur-press: 120ms;
+  --dur-move: 250ms;
+  --dur-theme: 450ms;
+  --ease-press: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-move: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --press-scale: 0.97;
   --enter-shift: 10px;
 
   /* focus ring */

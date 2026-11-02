@@ -8,6 +8,7 @@
  * The choice lives in the URL as ?f=<key> (history.replaceState), so a filtered view can be shared.
  */
 import { filterParam, filterToParam, parseFilter, type FilterKey } from "@/lib/filters";
+import { runViewTransition } from "@/scripts/view-transition";
 
 function apply(key: FilterKey): void {
   const rows = [...document.querySelectorAll<HTMLElement>("[data-project]")];
@@ -26,6 +27,24 @@ function apply(key: FilterKey): void {
   }
   const count = document.querySelector("[data-filter-count]");
   if (count) count.textContent = `${shown} ${shown === 1 ? "project" : "projects"}`;
+}
+
+/**
+ * Rows and company groups get a view-transition name only for the length of one filter change, so the
+ * rows that stay glide to their new places and the others fade, instead of the list jumping.
+ */
+function glide(update: () => void): void {
+  const moving = [
+    ...document.querySelectorAll<HTMLElement>("[data-project]"),
+    ...document.querySelectorAll<HTMLElement>("[data-company-group]"),
+  ];
+  moving.forEach((element, index) => {
+    element.style.viewTransitionName = `filter-${index}`;
+  });
+  const clear = () => moving.forEach((element) => element.style.removeProperty("view-transition-name"));
+  const transition = runViewTransition("filter", update);
+  if (transition) transition.finished.finally(clear);
+  else clear();
 }
 
 function writeUrl(key: FilterKey): void {
@@ -49,7 +68,7 @@ export function initFilters(): void {
   for (const button of buttons) {
     button.addEventListener("click", () => {
       const key = parseFilter(button.dataset.filter);
-      apply(key);
+      glide(() => apply(key));
       writeUrl(key);
     });
   }
