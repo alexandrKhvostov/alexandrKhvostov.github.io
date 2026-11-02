@@ -1,0 +1,206 @@
+title: Voice journaling platform
+company: sysgears
+period: 2021 to 2024
+order: 1
+role: "Fullstack Lead across the platform: the backends, the mobile apps, the CMS and the UI library."
+disciplines: [fullstack]
+aiAgents: false
+summary: Voice journaling platform with five NestJS backends, mobile apps, a CMS and a custom UI library, with the five backends deployed through one shared pipeline.
+glance:
+  - value: "5"
+    label: backends, each with its own Postgres database
+  - value: "3"
+    label: client apps, plus a CMS with two builds
+  - value: "81"
+    label: component folders in the UI library, built for web and mobile
+  - value: "7"
+    label: repos where every branch gets its own QA environment
+stack:
+  - TypeScript
+  - NestJS
+  - GraphQL
+  - Apollo
+  - PostgreSQL
+  - TypeORM
+  - Redis
+  - BullMQ
+  - React Native
+  - Expo
+  - Next.js
+  - MUI
+  - Storybook
+  - AWS ECS
+  - Terraform
+  - GitHub Actions
+  - Sentry
+overview:
+  - The platform is built for voice journaling. A person records a short spoken answer to a prompt, and the platform transcribes it and returns insights, such as a summary, sentiment, word frequency and generated artwork. The journaling app is the main app on top of it, next to a group video app called the group video app and a research site called the research site.
+  - Five NestJS backends talk to each other over GraphQL and HTTP, and each owns its Postgres database. Core holds the content and the answers. Three product backends keep their own users and stitch core's schema into theirs. A fifth stores the insights. Redis carries live status, and an event pipeline on AWS processes each recording.
+  - The clients are two React Native apps and one Next.js site, plus a React admin built as two apps, the CMS and the research admin. The mobile apps and the the research site site share a UI library that builds for web and mobile from one source, and an analytics package. One reusable workflow ships every Node backend to QA and staging, and in seven repos each branch gets its own QA environment.
+diagram:
+  type: sequence
+  caption: One recording, from the phone to a live insight on the screen.
+  nodes:
+    - id: app
+      label: Mobile app
+    - id: api
+      label: Product API
+    - id: core
+      label: Core API
+    - id: storage
+      label: Media storage
+    - id: analysis
+      label: Analysis service
+    - id: insights
+      label: Insights API
+  steps:
+    - from: app
+      to: api
+      label: Save moment
+      note: The app sends one GraphQL mutation to its product backend with the user's token. The product backend exposes core's schema next to its own, so the app talks to a single endpoint.
+    - from: api
+      to: core
+      label: Delegate to core
+      note: The product backend replaces the user id in the arguments with the core user id from the verified token and delegates the call. For these user-scoped calls a client cannot pass another user's id.
+    - from: core
+      to: api
+      label: Upload URL
+      note: In one transaction core creates the answer rows for the current version of the moment and returns a signed upload URL. The product backend passes it to the app.
+    - from: app
+      to: storage
+      label: Upload recording
+      note: The app sends the file straight to storage with a PUT to the signed URL, so media never passes through the APIs. If the upload fails, the app deletes the new submission and undoes the package progress.
+    - from: storage
+      to: core
+      label: Storage event
+      note: Storage emits an object-created event to EventBridge, and a relay Lambda posts it to a core route. Core converts video to audio when needed, then starts a transcription job. The job's completion event comes back the same way.
+    - from: core
+      to: analysis
+      label: Send transcript
+      note: Core stores the transcript, sets the status to valid or empty and posts the transcript to the analysis service. Every status change is published on Redis.
+    - from: analysis
+      to: insights
+      label: Save insight
+      note: The analysis result is saved to the insights backend.
+    - from: insights
+      to: api
+      label: Insight event
+      note: The product backend holds a graphql-ws subscription to insights. the research site merges the core and insights events into one aggregated update.
+    - from: api
+      to: app
+      label: Live update
+      note: The app receives the new status and insight over its own subscription and shows them without polling. If a recording fails or stalls, core retries it every hour, up to three attempts.
+structure:
+  tree: |
+    core/               content tree, answers, media pipeline
+    journal-api/        the journaling app product API
+    groups-api/        the group video app product API
+    research-api/           the research site product API
+    insights-api/       insight store and widget queries
+    analytics-service/  npm package over Sentry, Mixpanel, UXCam
+    journal-mobile/        the journaling app app, React Native
+    groups-mobile/     the group video app app, React Native
+    research-web/           the research site participant site, Next.js
+    cms/                CMS and the research admin, one React codebase
+    ui-library/         UI package, web and mobile builds
+    devops/             reusable workflows, Terraform, event relay
+  notes:
+    - path: core/
+      why: One Nest module per resource, with a resolver, a service and a validation file. The .graphql files in each module are the contract, and the TypeScript interfaces are generated from them. Content is a four-level tree with a versions table at each level, and Postgres triggers reject an update to a published version.
+    - path: journal-api, groups-api, research-api
+      why: Each product backend has its own entities, such as accounts, coins, groups and experiments, and serves one schema that is its own plus core's. At boot it fetches core's schema with retry. the research site denies core's operations by default and allows them per field and role. the journaling app keeps a role map for the stitched operations.
+    - path: journal-mobile/
+      why: "The the journaling app app is layered as providers, public and private navigators, screens, and a graphql folder with the Apollo link chain and typed hooks. Its UI copy sits in JSON files."
+    - path: cms/
+      why: Each entity has a folder with List, Create, Show and Edit views, and one helper turns them into routes, so a new content type is a folder plus its GraphQL operations. app/manager.ts picks the routes, the sign-in page and the API client for the CMS build or the the research admin build.
+    - path: ui-library/
+      why: Components are grouped as atoms, molecules and organisms. Theme tokens and primitives exist per theme, and components read them through one hook. A .web or .native file suffix picks the platform at build, so one src produces both bundles, and the package exports a web and a mobile entry.
+    - path: devops/
+      why: The reusable deploy workflow, the tagging workflow, the Terraform checks, the infrastructure code with one folder per environment and the Lambda that relays storage events to core live here. A pipeline change ships as a tagged release, and each service adopts it by changing its tag.
+tools:
+  title: Components
+  intro: Five backends, three client apps, a CMS with two builds, two shared packages and the infrastructure repo.
+  groups:
+    - title: Backends
+      note: NestJS, GraphQL and Postgres, each with its own database.
+      items:
+        - name: core
+          does: Content engine and system of record. It holds the versioned content tree, answers, tags, assets, signed URLs and the media pipeline. Only other services call it.
+        - name: journal-api
+          does: Product API for the the journaling app app and the CMS. It owns accounts, coins, daily streaks, profiles and carousels, stitches core's schema and calls insights.
+        - name: groups-api
+          does: Product API for the group video app. It owns moderators, groups, threads, replies and invites, and stitches core's schema.
+        - name: research-api
+          does: Product API for the research site. It owns experiments, participant invites and admin sign-in with Google, exports a CSV report, and stitches core's schema.
+        - name: insights-api
+          does: Stores the analysis output and serves it as widget-shaped queries. It publishes insight events for live updates.
+    - title: Client apps
+      items:
+        - name: the journaling app app
+          does: React Native app with daily packages, an explore tab, a recording screen and a profile with past moments and insights.
+        - name: the group video app app
+          does: React Native app where moderators run groups and post threads, and members reply with audio or video.
+        - name: the research site site
+          does: Next.js site where participants record a voice answer in the browser and then see their insights. It uses the UI library through react-native-web.
+        - name: CMS and the research admin
+          does: One React and MUI codebase built as two apps. The CMS edits posts, moments, reviews, questions, packages, sequences, carousels and assets. the research admin adds experiments and lab users.
+    - title: Shared packages
+      items:
+        - name: UI library
+          does: Universal component library for React Native and the web, with 81 component folders, two themes and Storybook on both platforms. Chromatic reviews the visual changes.
+        - name: Analytics service
+          does: One facade over Sentry, Mixpanel and UXCam, built for web, React Native and Node. All backends and all clients install it.
+    - title: Infrastructure
+      items:
+        - name: Deploy workflow
+          does: One reusable GitHub Actions workflow that bumps the version, pushes the image, renders the ECS task definition and waits for the service to settle.
+        - name: Event relay
+          does: A Lambda that forwards storage and transcription events to core, with a dead-letter queue behind the EventBridge targets.
+decisions:
+  - kind: decision
+    title: Core owns content and answers, and each product keeps its own users
+    why: Core knows a user only by an id and the app it belongs to. the journaling app, the group video app and the research site each store their own accounts and the core user id, and their backends serve their own schema, so account data stays in each product's database.
+  - kind: decision
+    title: Product backends stitch core's schema
+    why: At boot a product backend introspects core's schema, wraps it and stitches it with its own. Admins and the CMS get core's operations through one endpoint, so core's CRUD needs no hand-written resolvers for admin operations. Calls that act for one user are delegated with the user id taken from the token, and in the research site, permissions are set per field and role.
+  - kind: decision
+    title: Media goes straight to storage and is processed by events
+    why: Core returns a signed upload URL and the device sends the file to storage. Storage events go through EventBridge. Core sits behind an internal load balancer, and a relay Lambda in the VPC forwards storage events to it. Redis pub/sub and graphql-ws push status changes to the app. A job on the hour retries failed or stalled recordings, up to three attempts, then reports them to Sentry.
+  - kind: decision
+    title: Published content is immutable, and the database enforces it
+    why: Each content level has a base table and a versions table, with a published_at timestamp. Composite foreign keys limit which child types a parent accepts, and PL/pgSQL triggers reject an update to a published version. Answers point at an exact version, so old answers keep their meaning after content changes. The rules hold for every service and for a manual script too.
+  - kind: decision
+    title: One UI library name for two generations, built for web and mobile
+    why: The 2.x line on React Native Elements shipped under the same package name as the 1.x NativeBase line, so apps could move one at a time by changing the version, and the journaling app moved screen by screen. The new library added theme tokens, utility props and unit tests for its components. the research site and the journaling app moved to it while 1.x kept shipping fixes. One source builds the web and the mobile bundle through file suffixes.
+  - kind: decision
+    title: One admin codebase serves the CMS and the research admin
+    why: Both apps edit the same entities, so the repo builds two apps from one source, chosen by an environment variable at build time. Entity pages follow one four-view pattern and one route helper, and editors upload media straight to storage with signed URLs. The rich text editor keeps asset ids, not copied URLs, in the saved content.
+rules:
+  items:
+    - rule: Each backend owns its database and, by design, other services reach its data through its API
+      why: A schema change in one service cannot break another through a shared table, and each product's data stays with that product.
+      heldBy:
+        - Terraform defines a database instance for core, labs, insights and journal; local Docker Compose creates one per service
+    - rule: Every Node backend ships to QA and staging through the one reusable workflow, called by tag
+      why: Services release the same way, and a pipeline change reaches them as a versioned release of the infrastructure repo.
+      heldBy:
+        - reusable GitHub Actions workflow in the infrastructure repo
+        - each service pins a tag in its own workflow files
+        - tag workflow on every merged pull request
+    - rule: Every branch gets its own QA environment, and closing the pull request removes it
+      why: A ticket can be tested in AWS without touching staging.
+      heldBy:
+        - CI workflow that runs on every push to a non-default branch
+        - CI workflow that deletes the service when the pull request closes
+    - rule: Core validates every mutation's arguments with Joi pipes, and every backend validates its environment variables with a Joi schema at startup
+      why: Bad data and a broken deploy fail at the API or at startup, not deep in a job.
+      heldBy:
+        - Joi validation pipes on mutation arguments in core
+        - Joi schema for environment variables in every backend, checked at startup
+    - rule: Infrastructure changes go through Terraform, and the checks run on every pull request
+      why: Infrastructure changes are reviewable, and image versions for QA stay with CI.
+      heldBy:
+        - Terraform fmt, validate and tflint in CI, per environment folder
+        - pre-commit and tflint configuration in the infrastructure repo
+connections: []
+links: []

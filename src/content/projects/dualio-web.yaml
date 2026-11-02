@@ -5,16 +5,16 @@ order: 5
 role: Senior Full Stack Developer / Engineering Lead. Built and led the web funnel app.
 disciplines: [frontend]
 aiAgents: false
-summary: Web app for Dualio's ad funnel, one of three PlayMe funnel apps built on the same structure and rules. It renders quiz and paywall configs from a CDN, takes payment and hands buyers to the mobile app.
+summary: An example of PlayMe's three funnel web apps, sharing one structure and rules, shown on Dualio. It renders quiz and paywall configs and takes payment.
 glance:
+  - value: up to 120
+    label: subscriptions a day through the funnel
   - value: "3"
     label: funnel apps built on this structure and these rules
   - value: "2"
     label: pinned packages render the quiz and the paywall
   - value: "17"
     label: quiz step types a config can use
-  - value: about 40
-    label: release commits in about 5.5 months
 stack:
   - TypeScript
   - React 19

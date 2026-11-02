@@ -1,0 +1,208 @@
+title: Family budget
+company: side
+period: "2026"
+order: 1
+role: "Senior Full Stack Developer / Engineering Lead. Pet project: designed it and set it up for AI-orchestrated development."
+disciplines: [backend]
+aiAgents: true
+summary: A family budget kept through a Telegram bot. A message becomes a confirmed entry. The project is set up for AI-orchestrated development.
+glance:
+  - value: "673"
+    label: tests on main, counted as it calls (each table of cases counts once)
+  - value: "91"
+    label: gold cases (88 scored), mean of 3 runs
+  - value: "24"
+    label: decision records for choices that are expensive to reverse
+  - value: "4"
+    label: agent roles, each with a tier, an effort level and an access level
+stack:
+  - TypeScript
+  - Node.js 24
+  - Nx
+  - NestJS
+  - grammY
+  - LangGraph
+  - PostgreSQL
+  - Prisma
+  - pg-boss
+  - Zod
+  - Anthropic API
+  - Vitest
+  - Oxlint
+  - lefthook
+overview:
+  - Family budget is a Telegram bot that keeps a household's budget. A member writes an expense or income as a message, a language model reads it into a draft with amount, category and place, and the entry is saved only when the member taps Save. Budget groups take a share of income, 50/30/20 by default, categories carry plans per period, and the next period opens by itself.
+  - The code is a hexagonal Nx monorepo. Domain rules, ports, use cases, the AI adapter and the persistence adapter are separate projects, and lint rejects an import that crosses a layer. One port has three parsers, for Ollama, Gemini and Anthropic, picked by one environment setting. The bot runs on Claude Haiku 5.5, chosen on a gold set of 91 cases, 88 of them scored.
+  - The project is set up for AI-orchestrated development. The developer decides each step, approves each spec, goes through the code with the agent after each task, as the project's rule, and decides when to commit. Separate agent roles write the tests, implement the task and review the diff, under the same gates people use. Each task's cost is tracked by role and model.
+diagram:
+  type: pipeline
+  caption: One text message, from the chat to a saved entry.
+  nodes:
+    - id: chat
+      label: Telegram chat
+    - id: guard
+      label: Checks before the model
+    - id: parser
+      label: Expense parser
+    - id: domain
+      label: Domain checks
+    - id: draft
+      label: Draft in Postgres
+    - id: ledger
+      label: Ledger
+  steps:
+    - from: chat
+      to: guard
+      label: Text message
+      note: Only Telegram users on the allowlist get through, and a user who is not yet a member is asked to join first. A text over 500 characters is rejected, and a message that is only an amount never reaches the model, because the bot asks what it was for. The raw text is stored before any model call.
+    - from: guard
+      to: parser
+      label: One model call
+      note: The household's category tree goes into the prompt as short keys, never as ids. The parser port answers into a Zod schema with amounts as decimal strings. The call is recorded with the model, the prompt version and the latency, whether it succeeds or fails.
+    - from: parser
+      to: domain
+      label: Entries with keys
+      note: The adapter maps the keys back to category ids. Domain checks run in the order a person would fix them, from currency and date to items and amounts, with amounts parsed by integer arithmetic. An amount that does not appear in the member's text gets a warning mark. One bad entry does not stop the others, up to 10 per message.
+    - from: domain
+      to: draft
+      label: Store drafts
+      note: Each entry gets the budget period that contains its date. An item the bot is unsure about goes to Other with a mark and a hint. A small state machine then asks for what is still open, such as the place once, and the draft is stored with a 15-minute expiry.
+    - from: draft
+      to: chat
+      label: Draft message
+      note: The handler draws the draft from its stored state. Every item shows its amount and category, and the buttons save, cancel or change a category. The entry is not saved until a tap.
+    - from: chat
+      to: ledger
+      label: Save
+      note: A tap on Save is one conditional update, ready and not expired, inside the transaction that writes the entry and its items. A double tap writes once. The draft message is then edited into the saved entry.
+structure:
+  tree: |
+    apps/server/              Nest composition root, Telegram handlers, daily job
+    libs/
+      core/
+        domain/               pure rules: money, entry checks, drafts, periods
+        ports/                outbound interfaces and their DI tokens
+        application/          use cases and the add-entry graph
+      adapters/
+        ai/                   parsers, prompts, gold set and scorer
+        persistence/          Prisma schema, SQL migrations, repositories
+    .agents/                  skills, agent roles, tier to model map
+    tools/                    gates, frozen tests, hooks, agent metrics
+    docs/                     product, architecture, ADRs, specs, evals
+  notes:
+    - path: libs/core/domain, ports, application
+      why: Domain imports nothing, ports import domain, and use cases import both. Each project carries a type tag, and lint bans Nest, grammY, Prisma and the model SDKs in the core. Use cases are plain classes, so tests build them with fakes of the ports and call no network, model or database.
+    - path: libs/adapters/ai
+      why: One folder per port and one subfolder per vendor, and only those import a vendor SDK. Prompts are versioned files, and the bot's model uses v3. The eval folder holds the gold set and the scorer, and the runner drives the same adapter class the bot uses.
+    - path: libs/adapters/persistence
+      why: A Prisma schema with hand-written SQL beside it for the triggers, the exclusion constraint and 5 report views. Typed SQL files read the views. CI applies the migrations to a real Postgres and checks for drift.
+    - path: apps/server
+      why: Nest lives only here. Modules build the use cases with factories, handlers parse input with Zod and call use cases, and a daily pg-boss job opens the next period.
+    - path: .agents and tools
+      why: Agent configuration does not depend on one tool. Skills use the open SKILL.md format, roles carry their tier, effort and access in frontmatter, and one file maps tiers to models. The Claude Code folders are generated from it, and a drift check fails when they differ. Scripts in tools hold the gates, the test freeze, the hooks and the metrics.
+    - path: docs
+      why: Product scope, architecture, conventions, 24 ADRs and a spec per feature. Spec reports list the cost of every task by role and model.
+tools:
+  title: Agent roles
+  intro: The main session runs the feature skill and dispatches the roles. A tier maps to a model in one file, so a role changes model without a rewrite.
+  groups:
+    - title: Roles
+      note: Subagents cannot dispatch subagents, so every dispatch and retry comes from the main session.
+      items:
+        - name: test-writer
+          does: Standard tier, medium effort. Turns a spec's acceptance criteria into failing tests and compile-only stubs.
+        - name: implementer
+          does: Cheap tier, high effort. Implements one task until its tests, lint and typecheck pass, and takes the fix rounds after a review.
+        - name: implementer-strong
+          does: Standard tier, high effort. Takes multi-file and integration tasks, or a task the cheap tier failed twice.
+        - name: reviewer
+          does: Strongest tier, read only. Reads one diff against the spec, the architecture and the conventions, and returns APPROVE or CHANGES. Effort follows the signals the diff tool prints, such as database, money, security and concurrency.
+    - title: Skills
+      items:
+        - name: feature
+          does: Triage, spec, failing tests, freeze, implement, review, walkthrough, and a commit only on the developer's word.
+        - name: adr
+          does: Drafts an ADR from the template once the options are discussed and the developer has chosen.
+        - name: retro
+          does: Reads a finished spec's reports and ledger and proposes changes to the agents' environment, such as checks, rules and docs.
+    - title: Hooks
+      items:
+        - name: SubagentStop
+          does: Runs the gates and the frozen-test check when an agent finishes, and sends it back up to 3 times while they are red.
+        - name: PreToolUse on Bash
+          does: Denies a cloud-model eval run or a server start from a subagent, and asks the developer in the main session.
+        - name: PostToolUse on edits
+          does: Formats and lints every file an agent edits, and shows lint errors to the agent at once.
+decisions:
+  - kind: decision
+    title: Hexagonal layers, held by lint
+    why: Domain, ports, use cases and adapters are separate Nx projects with a type tag each. The same module-boundary check runs in pnpm check, in pre-commit, in CI and in the agent stop hook, so a layer cannot erode quietly while agents write code. A model vendor is an adapter plus one environment setting, which is why the parser has three vendors behind one port.
+  - kind: decision
+    title: One model call per message, in a workflow
+    why: Adding an entry is a graph of 7 nodes with early exits before the model and exactly one call. The model sees category keys and never ids, answers into a Zod schema and returns amounts as strings. Checks, the budget period, the fallback to Other and the draft state are plain domain code that tests cover without a model. Only the future question answering is meant to be an agent.
+  - kind: decision
+    title: Money is integers, and the model's numbers are checked
+    why: Money is an amount in minor units plus a currency. A decimal string from the model is parsed with BigInt arithmetic, and parseFloat is banned by lint. The amount must also appear in the member's text under some reading, or the draft carries a warning mark, and every draft waits for a human tap before it is saved.
+  - kind: decision
+    title: The database holds the invariants, and drafts live in it
+    why: Closed periods, category depth and fund rules are triggers, periods of a household cannot overlap by an exclusion constraint, and composite keys keep a row inside its household. The application checks first, so the member reads a clear message. Drafts are rows with an expiry, so they survive a restart, and Save is one conditional update that writes once.
+  - kind: decision
+    title: The model is chosen on a gold set, with the thresholds fixed first
+    why: The gold set has 91 cases, 88 of them scored, because three are only an amount and the bot answers those before any model. Thresholds were set before the first run. Kind and amounts must reach 98%, top-level category 85%, schema failures stay under 2%, and the 95th percentile latency stays under 10 seconds. A model whose answers vary is judged on the mean of 3 runs, and a held-out set is never in git. Claude Haiku 5.5 reached 100% on kind, 98.9% on amounts and 91.3% on category, as the mean of 3 runs.
+  - kind: decision
+    title: The reviewer is picked from a measured run
+    why: The reviewer choice came from an A/B over 10 reviews of one spec, with the decision rule written before the run. The Opus reviewer found all 4 blocking findings, so one reviewer runs with its effort scaled by risk. Fix rounds go to a fresh cheap implementer, which does not pay again for the context of the first one.
+  - kind: next
+    title: Add a category from the chat
+    why: A member names a category, picks a group, and the flow is planned to set an optional plan for the current period. Drafts are planned so a restart does not lose them. Plan edits and the carryover of leftover money follow.
+  - kind: next
+    title: Other currencies, receipt photos and voice
+    why: Entries in other currencies are converted at the rate of the transaction date from one central-bank source. Receipt photos and voice messages then enter through the same draft flow, with each model will be chosen on its own gold set.
+  - kind: next
+    title: Questions in plain language
+    why: A read-only agent answers from typed tools over the report views, which already exist. Plan against actual and warnings at 80% and 100% of a group's limit come with it.
+rules:
+  items:
+    - rule: Layers import only downward, and the core has no framework or SDK
+      why: A model or a framework can change without touching the rules, and agents cannot wear the layers down with a convenient import.
+      heldBy:
+        - Oxlint with the Nx enforce-module-boundaries rule, a type tag per project and banned external imports
+        - runs in pnpm check, pre-commit, CI and the agent stop hook
+    - rule: Money is integer minor units, never a float
+      why: Binary floats and numbers made by a model would corrupt totals.
+      heldBy:
+        - parseFloat banned by lint
+        - decimal parsing with BigInt in the domain library
+        - a review rule for Number and toFixed on money
+    - rule: The database guards the invariants
+      why: A bug or a manual SQL fix cannot silently break a total or mix two households.
+      heldBy:
+        - 17 triggers, an exclusion constraint and composite household keys
+        - CI migrates a real Postgres 18 and runs the drift check
+    - rule: People and agents pass the same gates
+      why: One quality bar applies, so a green result means the same for everyone.
+      heldBy:
+        - lefthook pre-commit with the format check, the adapter sync check and the gates for affected projects
+        - gates are lint, typecheck, test and build, and build is there because green tests once shipped a bundle that did not build
+        - a commit-msg check for Conventional Commits and against agent credit lines
+        - CI runs pnpm check
+    - rule: An implementer cannot weaken its tests
+      why: The tests define done, so changing them to pass would hide a failure.
+      heldBy:
+        - pnpm tests:freeze records a hash of each spec file the test-writer adds or changes
+        - the SubagentStop hook verifies the hashes for both implementer roles and blocks up to 3 times
+        - the main session never edits code or tests itself
+    - rule: A model is chosen only from a gold-set eval, and a cloud run needs the developer's yes
+      why: Model choice stays measured, and a paid call is never a surprise.
+      heldBy:
+        - thresholds written in the eval runner
+        - PreToolUse hook on Bash that denies cloud runs from a subagent
+        - documented in AGENTS.md
+    - rule: Real data stays out of git, and tokens and keys come from the developer
+      why: Receipts, voice messages and database dumps are private, and an agent should not hold credentials.
+      heldBy:
+        - storage and data folders ignored by git
+        - documented in AGENTS.md
+  agents: AGENTS.md is the single entry point and CLAUDE.md imports it. The feature skill fixes the order of work, from spec to failing tests, implementation, review and walkthrough, and leaves the commit to the developer. Roles carry their tier, effort, turn limit and access in frontmatter. The SubagentStop hook runs the gates and the frozen-test check, and it saves each agent's report. Every dispatch is logged with tokens by kind, model and result, so the report for a spec shows cost per task by role and model.
+connections: []
+links: []

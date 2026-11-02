@@ -1,0 +1,223 @@
+title: Frontend template
+company: playme
+period: "2026"
+order: 9
+role: "Senior Full Stack Developer / Engineering Lead. Proposed the template and set it up for vibe-coding with agents, with a platform branch for automatic setup and a funnel branch for starting new funnel projects such as Dualio; on the funnel branch another developer wrote the code from the architecture laid out here."
+disciplines: [frontend]
+aiAgents: true
+summary: A React and Vite template set up for vibe-coding with agents. It has layer rules in the linter, 17 skills and branches for automatic setup and new funnel projects.
+glance:
+  - value: "8"
+    label: layers, imported top-down
+  - value: "18"
+    label: Biome boundary and ban messages, each with its reason
+  - value: "17"
+    label: agent skills
+  - value: "3"
+    label: branches beside main, for automatic setup, starting funnel projects like Dualio and deployed-app checks
+stack:
+  - TypeScript
+  - React 19
+  - Vite
+  - Tailwind CSS 4
+  - shadcn/ui
+  - TanStack Router
+  - TanStack Query
+  - Zustand
+  - Zod
+  - Biome
+  - Husky
+  - AWS Amplify
+  - CodeRabbit
+  - Sentry
+  - Solidgate
+  - Playwright
+  - Checkly
+overview:
+  - The frontend template is a React and Vite starter for PlayMe web apps. A new app starts with the same layers, the same lint rules and the same agent skills, so a person or an agent can add a page, an API hook or a store and get the same shape every time.
+  - The main branch is the vibe-coding line, the template itself set up for agent-driven development. It is a single-page app with sign-in, routing, server and client state, plus the lint rules, AGENTS.md and the skills. The platform-workflow branch (the platform line) adds automatic setup, so an app is created and deployed by tool calls, through a bootstrap tool, a hosting tool and an Amplify build. The funnel-workflow branch (the funnel line) is the starting point for new funnel projects such as Dualio. It adds quiz, paywall and account on the shared funnel packages. A small branch adds Playwright and Checkly health checks.
+  - The funnel line shares its layer folders and its quiz and paywall packages with the Dualio web funnel, and its public pages were rebuilt from that app. The branch is meant for starting projects like it.
+diagram:
+  type: pipeline
+  caption: How one agent change passes the checks, from the request to the pull request.
+  nodes:
+    - id: request
+      label: Request
+    - id: skill
+      label: Skill
+    - id: hook
+      label: Edit hook
+    - id: simplify
+      label: Simplify pass
+    - id: git
+      label: Git hooks
+    - id: pr
+      label: Pull request
+  steps:
+    - from: request
+      to: skill
+      label: Trigger phrase
+      note: AGENTS.md maps phrases such as "add page" to a skill and tells the agent to ask before running it. The skill starts by reading AGENTS.md and the architecture doc.
+    - from: skill
+      to: hook
+      label: Files written
+      note: The skill writes the route, view, feature and API hooks into their layers. Each Edit or Write fires a hook that runs Biome with --write on that one file.
+    - from: hook
+      to: simplify
+      label: Turn ends
+      note: Biome has sorted imports and Tailwind classes, applied fixes and checked the layer, storage and env rules. AGENTS.md makes /simplify the last call after substantive code changes, and on .tsx files it also looks for markup that duplicates a primitive.
+    - from: simplify
+      to: git
+      label: Commit
+      note: The pre-commit hook runs lint-staged, which formats the staged files and runs lint with fixes.
+    - from: git
+      to: pr
+      label: Push
+      note: The pre-push hook runs pnpm check, which is lint, typecheck and tests. The funnel line ships a CodeRabbit config whose path instructions cover the same rules, for apps created from it.
+structure:
+  tree: |
+    src/
+      routes/        file-based routes, no logic
+      views/         one per page, composes widgets and features
+      widgets/       shared blocks such as the header and the modal manager
+      features/      business logic: forms, mutations, modals
+      components/    ui (shadcn primitives) and common
+      services/      api-hooks per entity, auth; funnel line adds quiz, paywall, tracking
+      store/         shared Zustand stores
+      lib/           api client, query client, storage and dom wrappers
+      config/        env.ts, the only reader of import.meta.env
+    .agents/skills/  17 skills, read by Claude Code and Cursor
+    docs/            architecture, API, auth and funnel docs
+  notes:
+    - path: routes, views, widgets, features
+      why: A route only points at a view. A view composes widgets and features and runs the page query. A widget assembles features with no logic of its own. A feature holds one business action, such as a mutation or opening a modal. A short test in the architecture doc settles where a new component goes.
+    - path: components and services
+      why: Components are plain UI, with shadcn primitives in ui and custom parts in common. Server data reaches the UI through services/api-hooks, one folder per entity with a key factory, queries, mutations and types. Components cannot import features, views, widgets or services, and services cannot import features, widgets, views or components.
+    - path: lib/storage, lib/dom, config/env
+      why: Each wrapper owns one browser API. storage wraps localStorage with JSON and a try/catch, dom holds the root class toggle, and env validates import.meta.env with Zod at load and throws a numbered list of what is wrong. The funnel line adds cookies.client for document.cookie.
+    - path: .agents/skills
+      why: The skills exist once. .claude/skills is a symlink to this folder and CLAUDE.md points at AGENTS.md, so Claude Code and Cursor read the same files.
+    - path: services on the funnel line
+      why: Quiz and paywall services fetch configs and hold the data providers. Analytics-service captures attribution, tracking has one file per event, and sentry, appsflyer and payments each have a folder. Every integration stays off until its variable is set.
+    - path: views/QuizView and views/PaywallView
+      why: The two mounts on the funnel line. Each passes config, a data provider, analytics and navigation to its package and draws no step. Signup and payment endpoints are the seams a new app fills in.
+tools:
+  title: Skills
+  intro: 17 skills in .agents/skills. The scaffolding and check skills start by reading AGENTS.md and the docs for their area, and AGENTS.md lists trigger phrases for the scaffolding and audit skills.
+  groups:
+    - title: Set up
+      items:
+        - name: /init-template
+          does: Asks for package details and which optional modules to keep, writes the local env file, installs, generates routes, typechecks and sets up git. On main it deletes itself afterwards. The platform line asks four questions.
+    - title: Scaffold
+      items:
+        - name: /new-feature
+          does: A feature folder with the component, types and a public index, extended only when the feature needs more.
+        - name: /new-view
+          does: A view for a route, with a named export that composes features.
+        - name: /new-page
+          does: Route, view, feature and optional API hooks together. Pages are protected by default.
+        - name: /new-api-hook
+          does: Keys, queries, mutations, types and a mock handler for one entity, from OpenAPI types or hand-written ones.
+        - name: /new-store
+          does: A Zustand store with devtools. It asks whether the store is global or local to a feature.
+        - name: /new-modal
+          does: A modal on the shadcn Dialog, registered in the modal manager.
+        - name: /new-route
+          does: A static public or protected route.
+        - name: /new-test
+          does: A colocated test, shaped for a utility, a component or a hook.
+    - title: Check and document
+      items:
+        - name: /audit
+          does: Runs in a forked read-only agent. It greps for layer violations, checks stores, API hooks, modals, features and UI primitives, and includes the typecheck and lint output.
+        - name: /implement-design
+          does: Turns a screenshot, markup or Figma frame into a table that maps each block to an existing primitive, before any markup is written.
+        - name: /document-feature
+          does: Reads the branch diff, then writes or updates a doc in docs/ and its entry in AGENTS.md.
+    - title: Release
+      note: Run only when a person starts them; four of them call shell scripts.
+      items:
+        - name: /stage-release
+          does: Creates a release branch from develop, bumps the version and triggers the stage deploy.
+        - name: /pre-release
+          does: Pulls the release branch, generates release notes and opens the pull requests to develop and main.
+        - name: /release
+          does: Merges the release branch, tags, pushes and cleans up.
+        - name: /release-message
+          does: Writes the release commit message from the diff.
+        - name: /open-pr
+          does: Pushes the branch and opens a pull request with the template filled in from the diff.
+decisions:
+  - kind: decision
+    title: The main branch is the vibe-coding baseline, and the other branches build on it
+    why: Main is the template set up for agent-driven development. AGENTS.md maps trigger phrases to skills, a hook formats and lints every file the agent edits, lint errors state the layer rule they enforce, and a push must pass pnpm check. The platform branch adds automatic setup on top, and the funnel branch adds what a new funnel project needs.
+  - kind: decision
+    title: Layer boundaries are lint errors, and each error says why
+    why: Biome noRestrictedImports carries a message for each forbidden import, such as "components/ is a dumb UI layer". There are 14 of them across components, widgets, features, services and store. A developer or an agent gets the rule and its reason from the tool that rejects the import. Components, widgets, features and views also ban default exports.
+  - kind: decision
+    title: Browser APIs and env each go through one wrapper
+    why: document, localStorage, sessionStorage and import.meta.env are banned in src outside a short allow-list of wrapper files. Storage, DOM changes and cookies get one place to keep behaviour consistent and to replace in tests, and env is validated once with Zod, so a missing variable stops the app at startup with a numbered list. The audit skill greps for localStorage and import.meta.env.
+  - kind: decision
+    title: Skills live once, and the agent asks before using one
+    why: .agents/skills is the only copy, with a symlink for Claude Code and a CLAUDE.md that points at AGENTS.md. There is no generated mirror to keep in step. AGENTS.md maps trigger phrases to skills and the agent asks before running one, so pages, API hooks and stores come out in the same shape each time.
+  - kind: decision
+    title: A design reference is mapped to primitives before any markup
+    why: A pasted template, screenshot or Figma frame is concrete enough to outweigh abstract rules, so AGENTS.md sends any visual reference to the implement-design skill. The skill maps every block to an existing primitive before it writes markup. Raw form elements, hand-built overlays and arbitrary values are named violations, and design tokens keep dark mode working.
+  - kind: decision
+    title: The platform branch adds automatic setup, so an app is created, configured and deployed by tool calls
+    why: The branch README describes a bootstrap tool that creates the repo from the template, a hosting tool that creates the Amplify app and injects the API address, and an Amplify build from amplify.yml. The build writes the injected VITE_ variables to a .env file, installs with a frozen lockfile, builds and deletes the .env. With one variable set, sign-in and file upload work without an init step. Another product app's first commit matches this branch.
+  - kind: decision
+    title: The funnel branch starts new funnel projects, with the funnel coming from shared packages with defined seams
+    why: Quiz and paywall come from the shared funnel packages. Each package is imported from one view folder and one service folder only. A config is fetched from a CDN address with a bare client, checked with the package schema and cached for the session. The signup calls return an explicit error until an app wires its endpoints, because a fake success would look like a working signup.
+rules:
+  items:
+    - rule: Layers import only downward
+      why: Each layer has one job, so a change in a lower layer does not pull UI code into it and the data layer stays reusable.
+      heldBy:
+        - "Biome noRestrictedImports: 14 forbidden imports, each with its reason"
+        - audit skill, which greps for the component, feature, widget and store pairs
+        - documented in AGENTS.md and the architecture doc
+    - rule: Storage, document and env are reached only through their wrappers
+      why: Each browser API gets one place to keep behaviour consistent and to replace in tests, and the app gets one validated env entry point.
+      heldBy:
+        - Biome noRestrictedGlobals and noRestrictedImports with a file allow-list
+        - audit skill grep
+        - CodeRabbit path instruction in the config the funnel line ships
+    - rule: Components, widgets, features and views use named exports
+      why: A named export has one name everywhere it is imported.
+      heldBy:
+        - Biome noDefaultExport in each of the four folders, with routes exempt
+    - rule: Server data reaches the UI only through api-hooks, with a key factory per entity
+      why: Caching and invalidation stay in one place, and query keys come from the entity's factory.
+      heldBy:
+        - Biome keeps components from importing services
+        - documented in the architecture doc
+        - audit skill, which checks each entity folder and its invalidation keys
+        - CodeRabbit path instruction in the config the funnel line ships
+    - rule: UI is built from the existing primitives, and a design reference is never copied as markup
+      why: Hand-built markup and hardcoded colors duplicate components and break dark mode.
+      heldBy:
+        - hard rules in AGENTS.md
+        - implement-design mapping gate
+        - audit skill greps for raw form elements, hand-built overlays and arbitrary values
+        - CodeRabbit path instruction in the config the funnel line ships
+    - rule: Only the funnel's own view and service folders import the quiz and paywall packages (funnel line)
+      why: Funnel rendering stays in the shared packages, so a new step type or section reaches every app that uses them.
+      heldBy:
+        - documented in AGENTS.md and the quiz doc
+    - rule: Every file Claude Code edits is formatted and linted by a hook, and a push passes pnpm check
+      why: Style errors are fixed or reported at the edit.
+      heldBy:
+        - PostToolUse hook that runs biome check --write
+        - lint-staged in the pre-commit hook
+        - pnpm check in the pre-push hook
+  agents: AGENTS.md is the one instruction file, and CLAUDE.md points at it. It maps trigger phrases to skills, requires the agent to ask first, makes /simplify the last call after code changes, and lists docs the agent opens only when the task needs them. The Claude settings allow the project's pnpm scripts and basic git, and deny force pushes and removing src or node_modules. The release skills have model invocation disabled, and stage-release is limited to its own scripts. The funnel line adds a CodeRabbit config that reads CLAUDE.md and the docs, comments only at 80 percent confidence, caps nits at two, and has path instructions for each area of the code.
+connections:
+  - to: quiz-library
+    label: renders its funnel line with packages from the
+  - to: dualio-web
+    label: has a funnel branch, a starting point for projects like the
+  - to: mcp-template
+    label: has release skills of the same names as the
+links: []
