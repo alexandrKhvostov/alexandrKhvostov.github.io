@@ -88,7 +88,7 @@ The full system map, a graph of every node and connection, is a later step. For 
 - The icons and previews in `public/` are compressed images made from the developer's originals, which stay in `research/images/` with the scripts that render them. A changed project title or summary means rendering its preview again.
 - `/lab`: every token and component in every state, a theme switcher and live token inputs, built from invented data in `lib/fixtures.ts`. Never linked. The file is `src/pages/_lab.astro` (the underscore keeps the router from building it) and a small integration in `astro.config.mjs` injects the `/lab` route only under `astro dev`, so a build contains neither the page nor its script.
 
-Page-to-page navigation uses native cross-document view transitions (`@view-transition { navigation: auto; }` in `styles/global.css`, off under `prefers-reduced-motion`): the project title carries a `view-transition-name` in the row and in the header, so it morphs from one to the other. There is no client-side router.
+Page-to-page navigation uses native cross-document view transitions (`@view-transition { navigation: auto; }` in `styles/global.css`, off under `prefers-reduced-motion`): the project title carries a `view-transition-name` in the row and in the header, so it morphs from one to the other. A navigation that stays on the same path ("All projects" on the home page) skips the morph in `pageswap` (`scripts/page-morph.ts`), since the titles would fly in from where the scrolled page left them. There is no client-side router.
 
 ## Deployment
 

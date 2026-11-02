@@ -126,6 +126,12 @@ const current = Astro.url.pathname === homePath ? "page" : undefined;
   </body>
 </html>
 
+<script>
+  import { initPageMorph } from "@/scripts/page-morph";
+
+  initPageMorph();
+</script>
+
 <style>
   .topbar {
     min-height: var(--topbar-height);
