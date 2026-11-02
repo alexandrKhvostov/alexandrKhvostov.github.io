@@ -1,0 +1,201 @@
+title: Quiz builder MCP
+company: playme
+period: "2026"
+order: 1
+role: Senior Full Stack Developer / Engineering Lead. Designed the service and led the team that built it; wrote the tasks.
+disciplines: [backend]
+aiAgents: true
+summary: MCP server that lets a marketer's AI agent build, preview and promote quiz and paywall configs for PlayMe products, with validation on every write.
+glance:
+  - value: 2 days
+    label: to build a funnel, down from 2 to 3 weeks
+  - value: 90%
+    label: of funnel building done without a developer
+  - value: "17"
+    label: MCP tools
+  - value: "48"
+    label: test files, about 600 cases
+stack:
+  - TypeScript
+  - Node.js 24
+  - Express 5
+  - MCP SDK
+  - Zod
+  - jose
+  - AWS S3
+  - CloudFront
+  - Vitest
+  - Docker
+  - Helm
+overview:
+  - Marketers need new quiz and paywall variants quickly, but the configs are strict JSON checked against a schema library. The builder lets an AI agent such as Claude write that JSON through MCP tools. The server validates it, stores it as a file in S3 behind a CDN, returns a preview link and guards the move to production. A new funnel used to take two to three weeks to build. With the builder it takes a couple of days, and about 90% of the work no longer needs a developer.
+  - Writes go to dev, stage or a test sandbox only. Production is reachable only through a promote tool, which validates every config against the target stage before copying anything. Shape validation uses the same Zod schemas as the quiz and paywall renderers, imported from the quiz library. Every config save, patch and promote records an audit entry with the author from the JWT.
+  - One deployment serves several products, picked by a required project parameter. Each project has its own storage path, preview URLs and subscription catalog backend. The server keeps no state between requests and scales between 2 and 3 replicas in production. It started from the MCP template and verifies tokens from the auth service.
+diagram:
+  type: pipeline
+  caption: The path of a config from an agent's request to production, with validation, a diff and audit entries.
+  nodes:
+    - id: agent
+      label: AI agent
+    - id: tools
+      label: Tools and validation
+    - id: dev
+      label: Dev stage
+    - id: diff
+      label: Diff and review
+    - id: prod
+      label: Prod stage
+    - id: audit
+      label: Audit log
+  steps:
+    - from: agent
+      to: tools
+      label: save_config
+      note: Auth middleware checks the caller's JWT before the tool runs. The tool resolves the project, then validates the config with the quiz library's Zod schemas plus structure and subscription-pack checks. An invalid config writes nothing and returns a report the agent can fix from.
+    - from: tools
+      to: dev
+      label: Write JSON
+      note: A valid config is stored in S3 under project, stage and id, and the agent gets a preview link. Write tools accept only dev, stage and test.
+    - from: tools
+      to: audit
+      label: Audit entry
+      note: Every config write records an audit entry with the author from the JWT. If the audit write fails, the change stays and the agent is told.
+    - from: dev
+      to: diff
+      label: diff_config
+      note: The tool lists what would change in the target stage, plus the status of region variants. The workflow has the agent show this to the person and wait for a yes before promoting. That step is an instruction the agent follows, not something the server enforces.
+    - from: diff
+      to: prod
+      label: promote_config
+      note: Every config in the set is validated against prod before anything is copied. Then S3 copies the files unchanged, leaves first.
+    - from: prod
+      to: audit
+      label: Audit entry and CDN refresh
+      note: A promotion records an audit entry and invalidates the CDN cache for the promoted files when a distribution is configured.
+structure:
+  tree: |
+    config/projects.json               project registry
+    quiz-builder-docs/                 guides served to the agent
+    src/core/                          reusable MCP plumbing (server, env, auth)
+    src/domain/tools/<tool>/           register.ts and core.ts per tool
+    src/domain/tools/with-project.ts   project parameter and capability check
+    src/domain/storage/                ConfigStore: S3 and in-memory
+    src/domain/validation/             funnel validation
+    src/domain/subscriptions/          subscription catalog client
+    src/domain/audit.ts                audit records
+    tests/                             48 test files and fixtures
+  notes:
+    - path: src/core/ and src/domain/
+      why: Core is the MCP plumbing that comes from the MCP template, which holds the Express app, env parsing, auth and the tool wrappers. Domain is the builder itself, with storage, validation, the project registry, the catalog client, the tools and audit. The README says to avoid editing core unless necessary.
+    - path: src/domain/tools/<tool>/
+      why: "Each tool has its own folder. register.ts is the MCP layer. core.ts holds the logic, takes its dependencies as arguments and imports no MCP or AWS SDK code, so tests call it directly with fake stores."
+    - path: src/domain/tools/with-project.ts
+      why: Adds the project parameter to every tool (required everywhere except the context tool), resolves aliases and checks that the project has the capability the tool needs. Tools never declare project themselves, so none can skip project scoping.
+    - path: src/domain/storage/
+      why: ConfigStore is an interface with an S3 implementation and an in-memory one. Both use the same serialization and etag rules, so tests run against memory while production uses S3.
+    - path: config/projects.json
+      why: The one place that lists projects, their aliases, preview URLs and subscription catalog backends. It is checked at startup, and the process exits on a bad entry.
+tools:
+  title: Tools
+  intro: "17 MCP tools. Every tool name carries the server prefix and takes a required project parameter; only the context tool makes it optional."
+  groups:
+    - title: Configs
+      items:
+        - name: get_builder_context
+          does: Returns the workflow and the list of connected projects; for a project, an index of the reference docs, or only the sections the agent asks for.
+        - name: get_type_schema
+          does: Returns the field reference for one step type, paywall section type, static-info section type or root config.
+        - name: list_configs
+          does: Lists the project's quiz and paywall configs across stages, with where dev differs from prod, the links between configs and their variants.
+        - name: get_config
+          does: Reads one config from one stage with its etag, last modified time and author.
+        - name: save_config
+          does: Validates a config and writes it to dev, stage or test, never prod, then returns a preview link.
+        - name: patch_config
+          does: Applies an ordered list of edits to an existing config. If an edit fails or the result is invalid, nothing is written.
+        - name: validate_funnel
+          does: Checks a draft quiz and paywall against a stage without writing anything.
+        - name: diff_config
+          does: Lists what would change in the target stage if the config were promoted, plus the state of its region variants.
+        - name: promote_config
+          does: Copies a config from one stage to another unchanged, together with its dependent configs when asked to, after validating each against the target. It is the only path to prod.
+    - title: Subscription catalog
+      note: "Paywall projects only, backed by the product backend's admin API. The four write tools default to a dry-run preview and save only when called with confirm: true."
+      items:
+        - name: list_subscription_packs / list_subscription_plans
+          does: Searches and pages through the catalog's packs or plans.
+        - name: get_subscription_pack / get_subscription_plan
+          does: Reads one pack or plan. A plan read also lists the packs that use it.
+        - name: save_subscription_pack
+          does: Creates or updates a pack with its plans, on dev or stage. Keys are generated on the server from names and per-day prices are computed, so the agent supplies neither.
+        - name: patch_subscription_pack
+          does: Renames a pack or changes its plans and their order, with a revision token to catch concurrent edits.
+        - name: patch_subscription_plan
+          does: Changes a plan's own fields and returns the packs that use it, as a preview of the impact.
+        - name: promote_subscription_pack
+          does: Re-creates a pack and its missing plans on another stage under the same keys. A second run reports that the pack is already there.
+decisions:
+  - kind: decision
+    title: Production only through promote
+    why: Write tools take only dev, stage and test as a stage, so prod is not a valid input, and the tool code checks it again. This keeps the agent from writing to production directly and leaves one path to it, which validates every config against prod first.
+  - kind: decision
+    title: Confirm flag on catalog writes, instruction before promotion
+    why: "The four subscription write tools default to confirm: false, which previews the change and saves nothing. Those writes change live pricing data in a product backend, so the safe mode is the default. They persist only when called with confirm: true, and the server enforces that. promote_config has no such flag. The workflow tells the agent to run diff_config, show the summary and wait for a yes, and that step is an instruction the agent follows. Even the catalog flag does not prove a person saw the preview, because the agent sets it, and the tool docs say so."
+  - kind: decision
+    title: Schemas imported, not copied
+    why: An earlier design snapshotted JSON Schema files and guarded them against drift. Importing the Zod objects from the quiz library leaves no copy of the schemas to drift. Three semantic validators are still mirrored by hand and kept at least as strict as the library.
+  - kind: decision
+    title: Reference docs served in pieces
+    why: The full reference is about 423 KB, which MCP clients would truncate. The first call returns the workflow and, once a project is chosen, a section index, and the agent asks for the sections it needs. One tool returns the fields of a single type.
+  - kind: decision
+    title: Pack keys and prices come from the server
+    why: Subscription pack keys are generated from names on the server and per-day prices are computed, so the agent does not have to invent them. With no catalog connected, tools return an explicit refusal, because an empty list would invite a made-up key.
+  - kind: decision
+    title: Stateless server, built per request
+    why: Each request gets a new MCP server and transport, so any replica can serve any call and no session store is needed. The 2026-07-28 MCP spec made the protocol core stateless in the same way, so moving the server to it takes little work. The cost is registering 17 tools on every request, which was not measured.
+  - kind: next
+    title: Roles and rollback
+    why: Today any signed-in employee with a valid token can promote, from the VPN or through the Claude connector, and there is no tool to list or restore earlier versions of a config. Roles and S3 versioning are on the improvement list.
+rules:
+  items:
+    - rule: Only the corporate VPN and Anthropic can reach the service
+      why: The production ingress accepts only the company VPN's IP and Anthropic's published outbound IPs, so the tools are closed to the rest of the internet before any token is checked. Cursor and Codex connect from an employee's machine on the VPN, and the Claude connector connects from Anthropic's cloud.
+      heldBy:
+        - ingress IP allowlist
+    - rule: Write tools cannot target prod
+      why: A model must not publish to production directly. Prod is reachable only through promote, which validates every planned config against the target stage first.
+      heldBy:
+        - Zod enum
+        - check in tool code
+        - tests
+    - rule: Schemas are imported from the quiz library, not copied
+      why: The builder and the renderers parse with the same schema objects, so there is no copy to drift.
+      heldBy:
+        - shared Zod objects
+        - pinned package version
+        - examples test
+    - rule: Hand-mirrored validators may be stricter than the library, never looser
+      why: A config that passes here and fails in the player ships broken.
+      heldBy:
+        - convention, documented per validator
+        - validation tests
+    - rule: The project registry is checked at startup
+      why: A bad entry could merge two products' catalogs or break every project, so the process exits on duplicate ids or aliases, shared catalog URLs or a missing API key.
+      heldBy:
+        - startup check
+  agents: CLAUDE.md documents the layers, the tool module pattern, the project registry and the production workflow. Seven project skills scaffold new tools and prompts and run the pull request and release steps. The server is also built for agents, since its first call hands the model the workflow and a section index.
+connections:
+  - to: auth-service
+    label: verifies tokens from
+  - to: quiz-library
+    label: imports schemas from
+  - to: mcp-template
+    label: is built from the
+  - to: s3
+    label: stores configs and audit entries in an
+  - to: cloudfront
+    label: invalidates the cache of
+  - to: product-backends
+    label: manages subscription packs in
+  - to: ai-clients
+    label: serves tools to
