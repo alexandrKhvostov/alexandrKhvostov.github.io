@@ -1,0 +1,196 @@
+title: Group coaching app
+company: sysgears
+period: "2024"
+order: 2
+role: "React Native developer in the SysGears team: app updates, push notifications, background step sync, chat media uploads, the Expo 52 upgrade and mobile releases from 2.4 to 2.7."
+disciplines: [mobile]
+aiAgents: false
+summary: "Weight-loss coaching in groups: a React Native app on Stream chat with habit tracking, recipes and a steps game, backed by a NestJS API in one Turborepo with the coaches' web app."
+glance:
+  - value: "60"
+    label: merged pull requests
+  - value: 50 → 52
+    label: Expo SDK upgrade, React Native 0.73 to 0.76
+  - value: "19"
+    label: app releases, from 2.4.9 to 2.7.18
+stack:
+  - TypeScript
+  - React Native
+  - Expo
+  - EAS Build
+  - EAS Update
+  - Stream Chat
+  - Firebase Cloud Messaging
+  - HealthKit
+  - Health Connect
+  - expo-secure-store
+  - react-query
+  - Survicate
+  - Sentry
+  - Turborepo
+  - GitHub Actions
+overview:
+  - The app is a paid group-coaching community for weight loss in two languages. Members chat in groups and directly, track habits with reminders, browse recipes and a knowledge video library, log weight progress with photos and a survey, see leaderboards and a map of group members, and play a steps game that reads steps from Apple Health or Health Connect. Coaches and admins work in a separate web control center.
+  - The mobile app is Expo and React Native on iOS and Android. Chat runs on Stream, push goes through Firebase Cloud Messaging, subscriptions on mobile go through RevenueCat, and sign-in and the JWT come from Supabase. The API is NestJS with Prisma on Postgres. It also holds the coach tooling, with automated messages, tasks detected from member chat, and a knowledge base that an LLM uses to suggest answers. Mobile, web, API and shared packages live in one Turborepo, and the web and mobile clients share a typed API client and the translations.
+  - The mobile work covers the app's runtime plumbing. That is how the app updates itself, how a push opens the exact message, how steps sync while the app is in the background, how members send large videos, and how releases reach both stores.
+diagram:
+  type: sequence
+  caption: How a server-timed silent push wakes each phone to sync steps, and why the session has to be readable while the app is in the background.
+  nodes:
+    - id: server
+      label: Steps endpoint
+    - id: fcm
+      label: FCM topic
+    - id: phone
+      label: Phone handler
+    - id: keychain
+      label: Keychain session
+    - id: health
+      label: HealthKit or Health Connect
+    - id: api
+      label: API
+  steps:
+    - from: phone
+      to: fcm
+      label: Join sync-steps
+      note: When a member turns step sync on, the app starts a background-fetch task and subscribes the device to the sync-steps topic. Turning it off unsubscribes. Only opted-in devices receive the push.
+    - from: server
+      to: fcm
+      label: Send silent push
+      note: "POST /steps/notification, guarded by a service token, sends one FCM message to the topic. It carries the APNs background push type, priority 5, content-available 1, the data field stepsSync and high priority on Android. One send reaches every subscribed device."
+    - from: fcm
+      to: phone
+      label: Data-only push
+      note: The message shows nothing to the member. The Firebase handlers are registered in App.tsx at module scope, so they run before React mounts and call the step sync when the data says stepsSync. iOS 18 can deliver the same message twice in the foreground, so the handler keeps the last messageId and skips repeats. On Android the background sync is switched off.
+    - from: phone
+      to: keychain
+      label: Read the session
+      note: The sync needs the sign-in token. Items saved with the default accessibility cannot be read while the phone is locked, so the secure-store wrapper saves every item as readable after the first unlock. This fix targeted the app failing to open after a long time in the background.
+    - from: keychain
+      to: phone
+      label: Token, migrated on read
+      note: The wrapper reads the new key with the V2 suffix. If it is empty, it reads the old key, writes the value under the new key and the new accessibility, deletes the old key and returns it. Existing members migrate on the first read and are not signed out.
+    - from: phone
+      to: health
+      label: Read today and yesterday
+      note: The sync checks the stored opt-in and the health permission first. HealthKit does not say whether read access was granted, so on iOS the app treats any step sample in the last 30 days as granted, and the settings screen shows a message when there is no data from Apple Health.
+    - from: phone
+      to: api
+      label: Post step progress
+      note: Both days are posted as progress on the steps habit with trackHabit. At 10,000 steps the app schedules a local notification, at most once a day, keyed by a timestamp in AsyncStorage.
+structure:
+  tree: |
+    apps/native/         Expo app for members, iOS and Android
+      App.tsx            Sentry, Survicate, steps task and Firebase handlers at module scope
+      modules/           22 feature folders: syncSteps, secureStorage, notifications, chats, stepsChallenge
+      hooks/             store-version check, EAS Update prompt
+      components/        chat upload, channel mute control
+      scripts/           release scripts: version bump, dev env values
+      README.md          EAS Update runbook, Stream SDK patch notes
+    apps/web/            Next.js web app and coach control center
+    apps/api/            NestJS API
+    packages/            api-types, i18n, commons, hooks, ui, auth-hooks and the Prisma database package
+    patches/             patch-package fixes for the Stream SDK
+    .github/workflows/   release.mobile.yml, update-development.yml, API image build
+  notes:
+    - path: apps/native/modules/
+      why: "Each feature folder holds api, components, hooks, screens and utils. The 22 folders keep a feature's code together. Background sync lives in syncSteps, the session store in secureStorage and the FCM topic helpers in notifications."
+    - path: apps/native/App.tsx
+      why: It registers Sentry, Survicate, the background steps task and the Firebase message handlers at module scope, then nests 12 providers. Handlers outside React are what let a silent push run the step sync before the UI exists.
+    - path: apps/native/modules/secureStorage/
+      why: One wrapper over expo-secure-store applies the keychain accessibility to every read, write and delete, and holds the map from old keys to V2 keys. Call sites for the API auth header, sign-in, token refresh, push token and last login use only the wrapper.
+    - path: packages/api-types and packages/i18n
+      why: The API serves Swagger, openapi-typescript generates the types, and an abstract Api class with 125 typed methods is shared by web and native. The native app subclasses it and adds the bearer token. Translations are one package for both clients, so one PR changes the contract or the copy everywhere.
+    - path: patches/
+      why: "patch-package fixes for the Stream SDK render in-app deep links as labelled links and hide the message input for members without permission. The README says why each patch exists and how to regenerate it after an SDK upgrade."
+    - path: .github/workflows/
+      why: A release branch push builds production and development apps, and a push to dev that touches the app or the translations publishes an EAS update. The mobile release workflow is the one that was fixed and extended.
+tools:
+  title: What I built
+  intro: Features and tooling in the mobile app, grouped by area.
+  groups:
+    - title: App updates
+      items:
+        - name: Store-version gate
+          does: On launch and on every return to the foreground, the app fetches the store version. If the major or minor is newer, an alert offers to open the store. Navigation waits for the check, and any error lets the app through. Dev builds skip it.
+        - name: EAS Update prompt and reload
+          does: The app downloads an available update, asks Later or Update, and reloads at once when the member agrees. The prompt appears at most once in 24 hours and runs again when the app returns to the foreground.
+        - name: EAS Update runbook
+          does: README steps for the environment, the eas.json keys used during an update, the version check, the update command and how to confirm the update group id on the Settings screen.
+    - title: Push notifications
+      items:
+        - name: Deep link from a chat push
+          does: A tap on a chat push opens the exact message, or the thread when the message has a parent. Navigation waits for the app and the navigation tree, and falls back to the channel list after 5 seconds.
+        - name: FCM topic helpers
+          does: Subscribe and unsubscribe helpers for topics, used by the step sync.
+        - name: Per-channel mute
+          does: Mute a channel for 1 hour, 1 day, 1 week, 1 month or forever, mapped to the expiration of Stream's channel mute.
+        - name: Notification fixes
+          does: Fixes for chat notifications and for the habit-reminder permission banner.
+    - title: Background step sync
+      items:
+        - name: Silent-push step sync
+          does: The device side of the server-timed sync. A data push wakes the handler, which reads steps and posts them to the steps habit.
+        - name: Keychain migration
+          does: A secure-store wrapper with versioned keys and a lazy migration, so the session stays readable in the background and no member is signed out.
+        - name: HealthKit permission check
+          does: Infers read access from 30 days of samples, because iOS does not report it, and shows a message when there is no data.
+        - name: 10,000-steps notification
+          does: A local notification when a member reaches 10,000 steps, at most once a day, built with a teammate.
+    - title: Chat
+      items:
+        - name: Media upload
+          does: Pick from the library, the camera or files. Videos are compressed on the device with progress and cancel, then uploaded to Stream. Media over 1 GB and files over 100 MB are rejected. The upload list is saved, so uploads resume after the app is killed.
+        - name: Join approval
+          does: When a member opens a channel they have not been approved for, the app asks them to confirm, calls the API endpoint a teammate added, and hides unapproved members from the member list.
+        - name: Reading helpers
+          does: Scroll to the first unread message and thread improvements.
+        - name: Stream SDK patches
+          does: A patch so every deep link in a message is recognised, a patch that hides the message input from members without permission, and README notes on why each patch exists and how to regenerate it.
+    - title: Steps game
+      note: The game and its server leaderboard were built by a teammate. These are features added to it.
+      items:
+        - name: Characters
+          does: Characters unlocked by level, and characters shown on the minimap scroll indicator.
+        - name: Game improvements
+          does: Non-default iOS UI elements, the health-activation pop-up and a fix for manual step editing.
+    - title: Feedback and privacy
+      items:
+        - name: Survicate set-up
+          does: Surveys triggered per screen from the navigation container, with a 700 ms delay so one does not open during an Android screen transition. A top answer, such as 5 stars, triggers the native store-review prompt.
+        - name: Weight-progress survey
+          does: A survey screen with a rating, tags and marketing consent.
+        - name: Hide from the map
+          does: A settings switch to hide yourself from the member map, with role-based filtering on the map and member lists.
+    - title: Releases and upgrade
+      items:
+        - name: Release branches 2.4.9 to 2.7.18
+          does: Cut 19 releases through the release-branch pipeline. Pushing a release branch sets the version from the branch name, bumps the iOS build number and Android version code, commits the release, cherry-picks it to dev and starts the production and development builds.
+        - name: Release workflow fixes
+          does: A step that writes development environment values into eas.json for the dev build, and fixes for the Android and iOS dev builds.
+        - name: Expo 52 upgrade
+          does: Moved the app from Expo 50 to Expo 52 and React Native 0.73 to 0.76, with expo-av replaced by expo-video and the React Navigation update.
+decisions:
+  - kind: decision
+    title: Silent-push handlers run before React mounts
+    why: Background fetch runs when the operating system decides, so the leaderboard could show old steps. The server sends a data-only push to one FCM topic when it wants fresh steps. On the phone, the Firebase handlers are registered at module scope in App.tsx, so a push can run the step sync with no open screen, and a device joins the topic while its member has step sync turned on.
+  - kind: decision
+    title: Keychain accessibility with versioned keys and a lazy migration
+    why: The app could not be opened after a long time in the background. A keychain item gets its accessibility when it is written, so the keys got a V2 suffix and the wrapper moves a value from the old key on its first read. Existing members stay signed in, and the session is readable after the first unlock.
+  - kind: decision
+    title: A store-version gate that cannot lock anyone out
+    why: Navigation waits for the version check, so a member does not use a build the team has replaced. Any error from the check lets the app through, and dev builds skip it, so a failing store lookup never blocks sign-in.
+  - kind: decision
+    title: A throttled update prompt that applies the fix at once
+    why: EAS Update ships JavaScript fixes without a store review. The app downloads an available update and asks the member at most once in 24 hours, and agreeing reloads the app straight away, so the fix applies the moment the member says yes.
+  - kind: decision
+    title: Upload state saved and resumed by step
+    why: Members send long videos from a phone that can be killed at any time. Each upload is saved as compressing, uploading or uploaded, and on the next open an image or file uploads again and a video that was still compressing is compressed again. Media over 1 GB and files over 100 MB are rejected when they are picked.
+  - kind: decision
+    title: Stream SDK patches documented with their regeneration steps
+    why: The app changes the Stream SDK through patch-package, so there is no fork to maintain. The README states why each patch exists and how to regenerate it after an SDK upgrade, so an upgrade keeps every fix.
+  - kind: decision
+    title: HealthKit permission inferred from 30 days of samples
+    why: HealthKit does not say whether read access was granted. The old check treated zero steps for today and yesterday as no permission, and sync could stop. Any sample in 30 days now counts as granted, and the settings screen shows a message when there is none.
+connections: []
+links: []
