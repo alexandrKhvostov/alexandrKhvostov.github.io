@@ -89,21 +89,22 @@ src/styles/
 
 ### Semantic roles
 
-| Token                                   | Role                                                                   | signal-dark                           | signal-light           |
-| --------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------- | ---------------------- |
-| `--bg`                                  | page canvas                                                            | night-950                             | day-50                 |
-| `--surface-1`                           | panels, project rows, code frames                                      | night-850                             | day-0                  |
-| `--surface-2`                           | diagram nodes, chips, hover                                            | night-800                             | day-100                |
-| `--line`                                | hairlines, dividers                                                    | night-700                             | day-200                |
-| `--line-strong`                         | inputs, focused frames                                                 | night-600                             | day-300                |
-| `--ink`                                 | text, headings                                                         | mist-50 (17.5:1)                      | slate-950 (18.1:1)     |
-| `--muted`                               | secondary text                                                         | mist-400 (7.1:1)                      | slate-600 (6.4:1)      |
-| `--signal`                              | links, focus ring, active diagram node, running signal                 | cyan-400 (13.4:1)                     | cyan-700 (5.0:1)       |
-| `--signal-2`                            | the second signal hue in glows and gradients                           | violet-400 (5.6:1)                    | violet-600 (5.8:1)     |
-| `--signal-glow`                         | glow color, never text                                                 | cyan-400                              | cyan-500               |
-| `--code-bg` / `--code-ink`              | code blocks (always dark)                                              | night-900 / mist-50                   | slate-950 / mist-50    |
-| `--code-key`                            | keys and highlights inside code                                        | cyan-400                              | cyan-400               |
-| `--company-playme` / `-sysgears` / `-side` | one color per company line on the projects page and in project headers | cyan / teal / amber, tuned in the lab | same, darker for light |
+| Token                                      | Role                                                                   | signal-dark                           | signal-light           |
+| ------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------- | ---------------------- |
+| `--bg`                                     | page canvas                                                            | night-950                             | day-50                 |
+| `--surface-1`                              | panels, project rows, code frames                                      | night-850                             | day-0                  |
+| `--surface-2`                              | diagram nodes, chips, hover                                            | night-800                             | day-100                |
+| `--line`                                   | hairlines, dividers                                                    | night-700                             | day-200                |
+| `--line-strong`                            | inputs, focused frames                                                 | night-600                             | day-300                |
+| `--ink`                                    | text, headings                                                         | mist-50 (17.5:1)                      | slate-950 (18.1:1)     |
+| `--muted`                                  | secondary text                                                         | mist-400 (7.1:1)                      | slate-600 (6.4:1)      |
+| `--signal`                                 | links, focus ring, active diagram node, running signal                 | cyan-400 (13.4:1)                     | cyan-700 (5.0:1)       |
+| `--signal-2`                               | the second signal hue in glows and gradients                           | violet-400 (5.6:1)                    | violet-600 (5.8:1)     |
+| `--signal-glow`                            | glow color, never text                                                 | cyan-400                              | cyan-500               |
+| `--code-bg` / `--code-ink`                 | code blocks (always dark)                                              | night-900 / mist-50                   | slate-950 / mist-50    |
+| `--code-key`                               | keys and highlights inside code                                        | cyan-400                              | cyan-400               |
+| `--company-playme` / `-sysgears` / `-side`    | one color per company line on the projects page and in project headers | cyan / teal / amber, tuned in the lab | same, darker for light |
+| `--kind-decision` / `-trade-off` / `-next` | the small square before each entry of a decision log                   | cyan / amber / violet                 | same, darker for light |
 
 Use of color:
 
@@ -182,17 +183,19 @@ Prose width 68ch. Weights in use: 400, 600, 700. Labels are sentence case; no up
 
 All states use semantic tokens. Focus is always a 2px `--signal` ring with 2px offset.
 
-- **Top bar (every page):** name and role on the left, "All projects", theme switch and "Contact" on the right; sticky, `--bg` with a bottom hairline. A project page must make sense to someone who arrived by a shared link.
+- **Top bar (every page):** name and role on the left, "All projects", theme switch and "Contact" on the right (Contact only once `contactUrl` in `lib/site.ts` is set); 64px high, sticky, `--bg` with a bottom hairline. A project page must make sense to someone who arrived by a shared link.
 - **Button, primary:** `--ink` fill with `--bg` text. **Secondary:** transparent, 1px `--line-strong`. **Quiet:** text only.
 - **Filter chip:** pill, 1px `--line`; pressed = `--ink` fill. The chosen filter is written to the URL (`?f=backend`).
-- **Project row:** `--surface-1`, hairline, `--radius-md`; title, one sentence, role, discipline chips; a 4px left edge in the company color. Hover: border `--signal-2` and a soft glow.
+- **Project row:** `--surface-1`, hairline, `--radius-md`; the whole row is one link; title, period, one sentence, role, discipline chips and the AI agents badge; a 4px left edge in the company color. Hover: border `--signal-2` and a soft glow.
 - **Stack chip:** Geist Mono, `--surface-1`, 1px `--line`, `--radius-sm`.
 - **Screen frame:** the main diagram or screenshot of a project sits in a `--radius-lg` frame with a 1px gradient border (`--signal` → transparent → `--signal-2`) and `--glow-shot`.
-- **Diagram node:** `--surface-2`, 1px `--line`; active = `--signal` border, text and `--glow-node`. **Edge:** 2px `--line` with the running signal.
-- **Sequence diagram + steps:** steps list beside the diagram; selecting a step highlights its message.
+- **Diagram node:** `--surface-2`, 1px `--line-strong`; active = `--signal` border, text and `--glow-node`. **Edge:** 2px, the muted text color softened (hairline tokens are too faint to carry meaning), numbered with a step badge; the active edge turns `--signal` and carries the running signal.
+- **Sequence and pipeline diagrams + steps:** the numbered steps list sits under the diagram, which stays in view (sticky) on screens tall enough while the list scrolls; selecting a step (click, or arrow keys in the list) lights its arrow and both nodes and opens its note, and the list is plain text without scripting. Each diagram has a wide drawing and a narrow one; on phones a sequence drops the message text and a pipeline runs top to bottom.
 - **Rule row:** rule (h3), why (muted), "held by" chips; when only a convention holds it, the chip says so.
-- **Decision log:** kind (decision, trade-off, next) with a small colored square, then title and reason.
+- **Decision log:** kind (decision, trade-off, planned next) with a small colored square, then title and reason.
 - **Code block:** always dark (`--code-bg`), `--radius-md`, Geist Mono; keys in `--signal`.
+- **Code structure:** the folder tree in a code block (always dark, scrolls inside itself on a narrow screen, never widens the page), then notes as a hairline-separated list: path in mono, the reason as body text.
+- **Tools list:** a group is an h3 with an optional note, then hairline-separated rows: name in mono, what it does beside it from 640px up and below it on phones. A list, not a grid of cards.
 - **Section anchor:** `#` beside each section heading, visible on hover and focus, copies a link to the section.
 
 ---

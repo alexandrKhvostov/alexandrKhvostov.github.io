@@ -1,0 +1,25 @@
+---
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import ToolList from "@/components/blocks/ToolList.astro";
+import type { Tools } from "@/lib/types";
+
+interface Props {
+  tools: Tools;
+}
+
+const { tools } = Astro.props;
+---
+
+<section data-reveal aria-labelledby="tools" class="flex flex-col gap-5">
+  <SectionHeading id="tools" title={tools.title} />
+  {tools.intro && <p class="max-w-prose">{tools.intro}</p>}
+  {tools.groups.map((group) => (
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-1">
+        <h3 class="text-h3">{group.title}</h3>
+        {group.note && <p class="max-w-prose text-small text-muted">{group.note}</p>}
+      </div>
+      <ToolList items={group.items} />
+    </div>
+  ))}
+</section>

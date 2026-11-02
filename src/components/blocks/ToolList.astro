@@ -1,0 +1,33 @@
+---
+import type { ToolItem } from "@/lib/types";
+
+interface Props {
+  items: ToolItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<dl class="tool-list flex flex-col">
+  {items.map((item) => (
+    <div class="tool-row flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0">
+      <dt class="font-mono text-mono break-words text-ink">{item.name}</dt>
+      <dd class="max-w-prose text-muted">{item.does}</dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  /* Wide screens: the name sits in a fixed column and the text beside it, so the rows line up. */
+  .tool-list {
+    --tool-name-width: 15rem;
+  }
+
+  @media (min-width: 640px) {
+    .tool-row {
+      display: grid;
+      grid-template-columns: var(--tool-name-width) minmax(0, 1fr);
+      column-gap: var(--space-5);
+    }
+  }
+</style>

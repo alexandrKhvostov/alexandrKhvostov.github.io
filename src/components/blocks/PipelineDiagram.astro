@@ -1,0 +1,18 @@
+---
+import DiagramCanvas from "@/components/blocks/DiagramCanvas.astro";
+import { diagramPresets, layoutPipeline } from "@/lib/diagram-layout";
+import type { DiagramData } from "@/lib/types";
+
+interface Props {
+  diagram: DiagramData;
+  activeStep?: number;
+}
+
+const { diagram, activeStep = 0 } = Astro.props;
+const label = `Pipeline diagram. ${diagram.caption} The numbered steps list below describes every hand-off.`;
+const wide = layoutPipeline(diagram.nodes, diagram.steps, diagramPresets.pipeline.wide);
+const narrow = layoutPipeline(diagram.nodes, diagram.steps, diagramPresets.pipeline.narrow);
+---
+
+<DiagramCanvas layout={wide} variant="wide" label={label} activeStep={activeStep} />
+<DiagramCanvas layout={narrow} variant="narrow" label={label} activeStep={activeStep} />

@@ -1,0 +1,54 @@
+---
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import type { ConnectionView } from "@/lib/connections";
+
+interface Props {
+  /** Title of this project: a connection label reads as a phrase between two names. */
+  projectTitle: string;
+  outgoing: ConnectionView[];
+  incoming: ConnectionView[];
+}
+
+const { projectTitle, outgoing, incoming } = Astro.props;
+const groups = [
+  { id: "connections-out", title: "This project connects to", items: outgoing, direction: "out" },
+  { id: "connections-in", title: "Projects that connect to this one", items: incoming, direction: "in" },
+].filter((group) => group.items.length > 0);
+---
+
+{groups.length > 0 && (
+  <section data-reveal aria-labelledby="connections" class="flex flex-col gap-5">
+    <SectionHeading id="connections" title="Connected projects" />
+    {groups.map((group) => (
+      <div class="flex flex-col gap-3">
+        <h3 id={group.id} class="text-h3">
+          {group.title}
+        </h3>
+        <ul class="flex flex-col" aria-labelledby={group.id}>
+          {group.items.map((item) => {
+            const name = item.href ? (
+              <a href={item.href} class="font-medium">
+                {item.label}
+              </a>
+            ) : (
+              <span class="font-medium text-ink">{item.label}</span>
+            );
+            return (
+              <li class="max-w-prose border-t border-line py-3 text-muted first:border-t-0">
+                {group.direction === "out" ? (
+                  <>
+                    {projectTitle} {item.edgeLabel} {name}
+                  </>
+                ) : (
+                  <>
+                    {name} {item.edgeLabel} {projectTitle}
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))}
+  </section>
+)}

@@ -3,7 +3,7 @@
 export interface ColorRole {
   /** CSS variable without the leading dashes. */
   name: string;
-  group: "canvas" | "line" | "text" | "signal" | "code" | "company";
+  group: "canvas" | "line" | "text" | "signal" | "code" | "company" | "kind";
   /** Literal background class, so Tailwind sees it. */
   swatch: string;
   use: string;
@@ -31,6 +31,14 @@ export const colorRoles: readonly ColorRole[] = [
   { name: "company-playme", group: "company", swatch: "bg-company-playme", use: "PlayMe line" },
   { name: "company-sysgears", group: "company", swatch: "bg-company-sysgears", use: "SysGears line" },
   { name: "company-side", group: "company", swatch: "bg-company-side", use: "side projects" },
+  {
+    name: "kind-decision",
+    group: "kind",
+    swatch: "bg-kind-decision",
+    use: "square before a decision in the log",
+  },
+  { name: "kind-trade-off", group: "kind", swatch: "bg-kind-trade-off", use: "square before a trade-off" },
+  { name: "kind-next", group: "kind", swatch: "bg-kind-next", use: "square before a next step" },
 ];
 
 /** Roles a theme sets that are not colors. */

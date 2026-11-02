@@ -1,0 +1,30 @@
+---
+import { decisionKindLabels } from "@/lib/projects";
+import type { Decision } from "@/lib/types";
+
+interface Props {
+  items: Decision[];
+}
+
+const { items } = Astro.props;
+
+// Literal class names so Tailwind sees them.
+const squares = {
+  decision: "bg-kind-decision",
+  "trade-off": "bg-kind-trade-off",
+  next: "bg-kind-next",
+};
+---
+
+<ol class="flex flex-col">
+  {items.map((item) => (
+    <li class="flex flex-col gap-2 border-t border-line py-5 first:border-t-0 first:pt-0">
+      <p class="flex items-center gap-2 font-mono text-mono text-muted">
+        <span aria-hidden="true" class:list={["size-2 shrink-0", squares[item.kind]]} />
+        {decisionKindLabels[item.kind]}
+      </p>
+      <h3 class="text-h3">{item.title}</h3>
+      <p class="max-w-prose text-muted">{item.why}</p>
+    </li>
+  ))}
+</ol>

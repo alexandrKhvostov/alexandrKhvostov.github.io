@@ -19,5 +19,9 @@
   --company-sysgears: var(--p-teal-700);
   --company-side: var(--p-amber-700);
 
+  --kind-decision: var(--p-cyan-700);
+  --kind-trade-off: var(--p-amber-700);
+  --kind-next: var(--p-violet-600);
+
   --glow-strength: var(--p-glow-third);
 }

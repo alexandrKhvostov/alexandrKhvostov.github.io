@@ -1,0 +1,126 @@
+---
+import ProjectArchitecture from "@/components/sections/ProjectArchitecture.astro";
+import ProjectConnections from "@/components/sections/ProjectConnections.astro";
+import ProjectDecisions from "@/components/sections/ProjectDecisions.astro";
+import ProjectHeader from "@/components/sections/ProjectHeader.astro";
+import ProjectOverview from "@/components/sections/ProjectOverview.astro";
+import ProjectRules from "@/components/sections/ProjectRules.astro";
+import ProjectStructure from "@/components/sections/ProjectStructure.astro";
+import ProjectTools from "@/components/sections/ProjectTools.astro";
+import Button from "@/components/ui/Button.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import type { ConnectionView } from "@/lib/connections";
+import { homePath, pageTitle, projectPath } from "@/lib/site";
+import type { Project } from "@/lib/types";
+
+interface Props {
+  project: Project;
+  /** The project after this one in page order, if there is another. */
+  next?: Project | undefined;
+  outgoing: ConnectionView[];
+  incoming: ConnectionView[];
+}
+
+const { project, next, outgoing, incoming } = Astro.props;
+const hasConnections = outgoing.length + incoming.length > 0;
+
+const contents = [
+  { id: "overview", label: "Overview" },
+  { id: "architecture", label: "Architecture" },
+  ...(project.structure ? [{ id: "structure", label: "Code structure" }] : []),
+  ...(project.tools ? [{ id: "tools", label: project.tools.title }] : []),
+  { id: "decisions", label: "Decision log" },
+  ...(project.rules ? [{ id: "rules", label: "Rules and agents" }] : []),
+  ...(hasConnections ? [{ id: "connections", label: "Connected projects" }] : []),
+];
+---
+
+<BaseLayout title={pageTitle(project.title)} description={project.summary} ogType="article">
+  <div class="project-layout pt-7 pb-section">
+    <nav aria-label="Contents" class="project-toc" data-contents>
+      <p class="mb-3 text-small text-muted">On this page</p>
+      <ul class="flex flex-col gap-2 border-l border-line">
+        {contents.map((item) => (
+          <li>
+            <a
+              href={`#${item.id}`}
+              data-contents-link
+              class="toc-link -ml-px block border-l border-transparent py-1 pl-3 text-small text-muted no-underline hover:border-signal hover:text-ink"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="project-content flex min-w-0 flex-col gap-section">
+      <ProjectHeader project={project} />
+      <ProjectOverview paragraphs={project.overview} />
+      <ProjectArchitecture diagram={project.diagram} />
+      {project.structure && <ProjectStructure structure={project.structure} />}
+      {project.tools && <ProjectTools tools={project.tools} />}
+      <ProjectDecisions items={project.decisions} />
+      {project.rules && <ProjectRules rules={project.rules} />}
+      <ProjectConnections projectTitle={project.title} outgoing={outgoing} incoming={incoming} />
+      <nav
+        aria-label="More projects"
+        class="flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-stretch sm:justify-between"
+      >
+        <div>
+          <Button variant="secondary" href={homePath}>
+            <span aria-hidden="true">←</span> All projects
+          </Button>
+        </div>
+        {next && (
+          <a
+            href={projectPath(next.slug)}
+            class="next-link flex flex-col gap-1 rounded-md border border-line p-4 text-ink no-underline transition-shadow duration-fast ease-out hover:border-signal-2 hover:shadow-glow-row sm:items-end sm:text-right"
+          >
+            <span class="text-small text-muted">Next project</span>
+            <span class="text-h3">
+              {next.title} <span aria-hidden="true">→</span>
+            </span>
+          </a>
+        )}
+      </nav>
+    </div>
+  </div>
+  <p class="sr-only" role="status" data-anchor-status></p>
+</BaseLayout>
+
+<script>
+  import { initContents } from "@/scripts/contents";
+  import { initReveal } from "@/scripts/reveal";
+
+  initReveal();
+  initContents();
+</script>
+
+<style>
+  /* The section in view (aria-current set by scripts/contents.ts). */
+  .toc-link[aria-current="true"] {
+    border-left-color: var(--signal);
+    color: var(--ink);
+  }
+
+  .project-toc {
+    display: none;
+  }
+
+  /* From 900px: the contents column sticks on the left (200px); the content column holds prose at 68ch
+     and lets diagrams use its full width. */
+  @media (min-width: 900px) {
+    .project-layout {
+      display: grid;
+      grid-template-columns: var(--toc-width) minmax(0, 1fr);
+      column-gap: var(--space-7);
+    }
+
+    .project-toc {
+      display: block;
+      position: sticky;
+      top: var(--space-9);
+      align-self: start;
+    }
+  }
+</style>

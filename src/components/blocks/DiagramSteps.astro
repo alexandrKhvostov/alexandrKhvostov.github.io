@@ -1,0 +1,99 @@
+---
+import type { DiagramNodeData, DiagramStepData } from "@/lib/types";
+
+interface Props {
+  steps: DiagramStepData[];
+  nodes: DiagramNodeData[];
+  activeStep?: number;
+  /** Makes element ids unique when a page holds more than one list. */
+  idPrefix?: string;
+}
+
+const { steps, nodes, activeStep = 0, idPrefix = "step" } = Astro.props;
+
+const labelOf = (id: string) => nodes.find((node) => node.id === id)?.label ?? id;
+---
+
+<ol class="steps flex flex-col gap-2">
+  {steps.map((step, index) => (
+    <li
+      class="step rounded-md border border-line"
+      data-step-item={index}
+      data-active={index === activeStep ? "" : undefined}
+    >
+      <button
+        type="button"
+        data-step-button
+        aria-controls={`${idPrefix}-note-${index}`}
+        class="step-button flex w-full items-start gap-3 rounded-md p-3 text-left transition-colors duration-fast ease-out hover:bg-surface-2"
+      >
+        <span aria-hidden="true" class="step-number font-mono text-mono">
+          {index + 1}
+        </span>
+        <span class="flex min-w-0 flex-col gap-1">
+          <span class="step-label font-medium">{step.label}</span>
+          <span class="font-mono text-mono text-muted">
+            {labelOf(step.from)}
+            <span aria-hidden="true"> → </span>
+            <span class="sr-only"> to </span>
+            {labelOf(step.to)}
+          </span>
+        </span>
+      </button>
+      <p
+        id={`${idPrefix}-note-${index}`}
+        data-step-note
+        class="step-note max-w-prose px-3 pb-3 text-small text-muted"
+      >
+        {step.note}
+      </p>
+    </li>
+  ))}
+</ol>
+
+<script>
+  import { initDiagrams } from "@/scripts/diagram";
+
+  initDiagrams();
+</script>
+
+<style>
+  .step {
+    --step-number-size: var(--space-5);
+  }
+
+  .step-number {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--step-number-size);
+    height: var(--step-number-size);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      color var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out);
+  }
+
+  .step[data-active] {
+    border-color: var(--signal);
+  }
+
+  .step[data-active] .step-number {
+    border-color: var(--signal);
+    background-color: var(--signal);
+    color: var(--bg);
+  }
+
+  .step[data-active] .step-label {
+    color: var(--signal);
+  }
+
+  /* Once the script runs, only the chosen step shows its note. Without it every note stays readable. */
+  :global([data-diagram][data-enhanced]) .step:not([data-active]) .step-note {
+    display: none;
+  }
+</style>

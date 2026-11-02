@@ -1,0 +1,23 @@
+---
+import { loadProjects } from "@/content/load";
+import ProjectLayout from "@/layouts/ProjectLayout.astro";
+import { incomingConnections, outgoingConnections } from "@/lib/connections";
+import { nextProject } from "@/lib/projects";
+
+export async function getStaticPaths() {
+  const projects = await loadProjects();
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: {
+      project,
+      next: nextProject(project.slug, projects),
+      outgoing: outgoingConnections(project.slug, projects),
+      incoming: incomingConnections(project.slug, projects),
+    },
+  }));
+}
+
+const { project, next, outgoing, incoming } = Astro.props;
+---
+
+<ProjectLayout project={project} next={next} outgoing={outgoing} incoming={incoming} />

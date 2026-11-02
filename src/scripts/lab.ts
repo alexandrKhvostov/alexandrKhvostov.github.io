@@ -1,3 +1,4 @@
+import { initReveal } from "@/scripts/reveal";
 import { applyTheme, currentTheme } from "@/scripts/theme";
 import type { ThemeId } from "@/styles/themes/index";
 
@@ -82,19 +83,6 @@ function initEntrance(): void {
   });
 }
 
-/** A diagram's running signal pauses while the diagram is off screen. */
-function initSignalPause(): void {
-  const diagrams = document.querySelectorAll<SVGElement>("[data-signal-diagram]");
-  if (!("IntersectionObserver" in window)) return;
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) entry.target.removeAttribute("data-paused");
-      else entry.target.setAttribute("data-paused", "");
-    }
-  });
-  diagrams.forEach((diagram) => observer.observe(diagram));
-}
-
 export function initLab(): void {
   for (const item of items()) {
     const name = item.dataset.labRole!;
@@ -136,7 +124,7 @@ export function initLab(): void {
   });
 
   initEntrance();
-  initSignalPause();
+  initReveal();
 
   document.addEventListener("themechange", () => {
     clearEdits();

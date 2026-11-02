@@ -1,0 +1,48 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  class?: string;
+}
+
+const { id, title, class: className } = Astro.props;
+---
+
+<h2 id={id} class:list={["section-heading text-h2", className]}>
+  {title}
+  <a
+    data-anchor
+    href={`#${id}`}
+    aria-label={`Link to the section ${title}`}
+    class="section-anchor rounded-sm font-mono text-muted no-underline hover:text-signal"
+  >
+    #
+  </a>
+</h2>
+
+<script>
+  import { initAnchors } from "@/scripts/anchors";
+
+  initAnchors();
+</script>
+
+<style>
+  /* The anchor shows on hover and focus; on touch screens, which have no hover, it is always visible. */
+  .section-anchor {
+    --anchor-gap: var(--space-2);
+    margin-inline-start: var(--anchor-gap);
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+
+  .section-heading:hover .section-anchor,
+  .section-anchor:focus-visible {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .section-anchor {
+      opacity: 1;
+    }
+  }
+</style>

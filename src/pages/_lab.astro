@@ -1,9 +1,40 @@
 ---
+import CodeBlock from "@/components/blocks/CodeBlock.astro";
+import DecisionLog from "@/components/blocks/DecisionLog.astro";
+import DiagramSteps from "@/components/blocks/DiagramSteps.astro";
+import GlanceStrip from "@/components/blocks/GlanceStrip.astro";
+import PipelineDiagram from "@/components/blocks/PipelineDiagram.astro";
+import ProjectRow from "@/components/blocks/ProjectRow.astro";
+import RuleList from "@/components/blocks/RuleList.astro";
+import ToolList from "@/components/blocks/ToolList.astro";
+import ScreenFrame from "@/components/blocks/ScreenFrame.astro";
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import SequenceDiagram from "@/components/blocks/SequenceDiagram.astro";
+import ProjectArchitecture from "@/components/sections/ProjectArchitecture.astro";
+import ProjectConnections from "@/components/sections/ProjectConnections.astro";
+import ProjectDecisions from "@/components/sections/ProjectDecisions.astro";
+import ProjectHeader from "@/components/sections/ProjectHeader.astro";
+import ProjectList from "@/components/sections/ProjectList.astro";
+import ProjectOverview from "@/components/sections/ProjectOverview.astro";
+import ProjectRules from "@/components/sections/ProjectRules.astro";
+import ProjectStructure from "@/components/sections/ProjectStructure.astro";
+import ProjectTools from "@/components/sections/ProjectTools.astro";
 import Badge from "@/components/ui/Badge.astro";
+import Chip from "@/components/ui/Chip.astro";
 import Button from "@/components/ui/Button.astro";
 import Link from "@/components/ui/Link.astro";
 import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { incomingConnections, outgoingConnections } from "@/lib/connections";
+import {
+  decisionsFixture,
+  fixtureProjects,
+  pipelineFixture,
+  rulesFixture,
+  sequenceFixture,
+  structureFixture,
+  toolsFixture,
+} from "@/lib/fixtures";
 import {
   colorRoles,
   fontRoles,
@@ -19,7 +50,7 @@ import { themes } from "@/styles/themes/index";
 // Served at /lab by the lab-dev-only integration in astro.config.mjs. The leading underscore keeps
 // Astro's file router from building it, so `astro build` ships neither the page nor its script.
 
-const groups = ["canvas", "line", "text", "signal", "code", "company"] as const;
+const groups = ["canvas", "line", "text", "signal", "code", "company", "kind"] as const;
 const variants = ["primary", "secondary", "quiet"] as const;
 const states = [
   { id: "default", demo: undefined, disabled: false },
@@ -28,6 +59,15 @@ const states = [
   { id: "disabled", demo: undefined, disabled: true },
 ] as const;
 const companies = ["playme", "sysgears", "side"] as const;
+const chipStates = [
+  { id: "default", pressed: false, demo: undefined },
+  { id: "hover", pressed: false, demo: "hover" },
+  { id: "focus", pressed: false, demo: "focus" },
+  { id: "pressed", pressed: true, demo: undefined },
+] as const;
+const sampleProject = fixtureProjects[0]!;
+const outgoing = outgoingConnections(sampleProject.slug, fixtureProjects);
+const incoming = incomingConnections(sampleProject.slug, fixtureProjects);
 const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
 ---
 
@@ -104,28 +144,6 @@ const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
           </ul>
         </div>
       ))}
-      <div class="flex flex-col gap-3">
-        <h3 class="font-mono text-mono text-muted">Project rows</h3>
-        <p class="text-small text-muted">
-          A 4px left edge in the company color; hover lifts the border to <code>--signal-2</code> with a soft
-          glow.
-        </p>
-        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {companies.map((company) => (
-            <li
-              class:list={[
-                "flex flex-col gap-1 rounded-md border border-l-4 border-line bg-surface-1 p-4 transition-shadow duration-fast ease-out hover:border-signal-2 hover:shadow-glow-row",
-                company === "playme" && "border-l-company-playme hover:border-l-company-playme",
-                company === "sysgears" && "border-l-company-sysgears hover:border-l-company-sysgears",
-                company === "side" && "border-l-company-side hover:border-l-company-side",
-              ]}
-            >
-              <span class="text-h3">Project in {company}</span>
-              <span class="text-small text-muted">One sentence about what the system does.</span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </section>
 
     <section class="flex flex-col gap-5" aria-labelledby="lab-type">
@@ -211,44 +229,6 @@ const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
           </li>
         ))}
       </ul>
-
-      <div class="flex flex-col gap-3">
-        <h3 class="text-h3">Screen frame</h3>
-        <figure class="screen-frame" aria-label="Sample screen frame">
-          <div class="screen-body">
-            <span class="screen-bar"></span>
-            <span class="screen-bar screen-bar-short"></span>
-            <span class="screen-bar screen-bar-mid"></span>
-          </div>
-        </figure>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <h3 class="text-h3">Diagram: node, edge, signal</h3>
-        <div class="flex flex-wrap items-center gap-5">
-          <span class="diagram-node">Rest</span>
-          <span class="diagram-node" data-active>
-            Active
-          </span>
-          <svg
-            class="diagram-edge"
-            viewBox="0 0 240 24"
-            role="img"
-            aria-label="Edge with a signal running from the left node to the right node"
-            data-signal-diagram
-          >
-            <path d="M8 12 H232" pathLength="100" class="edge-base"></path>
-            <path d="M8 12 H232" pathLength="100" class="edge-run" data-signal></path>
-          </svg>
-          <span class="diagram-node">Source</span>
-          <span class="diagram-node" data-active>
-            Target
-          </span>
-        </div>
-        <p class="text-small text-muted">
-          The signal pauses while the diagram is off screen and is hidden under reduced motion.
-        </p>
-      </div>
 
       <div class="flex flex-col gap-3">
         <h3 class="text-h3">Ambient glow</h3>
@@ -341,82 +321,176 @@ const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
         </div>
       </div>
     </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-blocks">
+      <h2 id="lab-blocks" class="text-h2">
+        Project blocks
+      </h2>
+      <p class="max-w-prose text-small text-muted">
+        Built from invented data in <code>src/lib/fixtures.ts</code>. Nothing here describes a real project.
+      </p>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Chip</h3>
+        <div class="flex flex-wrap items-center gap-3">
+          <code class="w-9 shrink-0 text-small text-muted">stack</code>
+          <Chip variant="stack">TypeScript</Chip>
+          <Chip variant="stack">PostgreSQL</Chip>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <code class="w-9 shrink-0 text-small text-muted">discipline</code>
+          <Chip variant="discipline">Backend</Chip>
+          <Chip variant="discipline">Fullstack</Chip>
+          <code class="w-9 shrink-0 text-small text-muted">ai</code>
+          <Chip variant="ai">AI agents</Chip>
+          <code class="w-9 shrink-0 text-small text-muted">held</code>
+          <Chip variant="held">CI check</Chip>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <code class="w-9 shrink-0 text-small text-muted">filter</code>
+          {chipStates.map((state) => (
+            <Chip variant="filter" pressed={state.pressed} data-demo-state={state.demo}>
+              {state.id}
+            </Chip>
+          ))}
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Project row</h3>
+        <p class="max-w-prose text-small text-muted">
+          A 4px left edge in the company color; hover lifts the border to <code>--signal-2</code> with a soft
+          glow. The whole row is one link. Left to right: rest, hover.
+        </p>
+        <ul class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <ProjectRow project={fixtureProjects[0]!} />
+          <ProjectRow project={fixtureProjects[2]!} data-demo-state="hover" />
+        </ul>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Glance strip</h3>
+        <GlanceStrip items={sampleProject.glance} />
+        <GlanceStrip
+          items={[
+            { value: "9", label: "endpoints" },
+            { value: "4", label: "tables" },
+            { value: "1 h", label: "token lifetime" },
+            { value: "30 days", label: "refresh lifetime" },
+          ]}
+        />
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Section heading</h3>
+        <SectionHeading id="lab-demo-heading" title="Section title" />
+        <p class="text-small text-muted">
+          The # shows on hover and focus, always on touch screens; click copies the link.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Screen frame</h3>
+        <ScreenFrame caption="Caption under the picture.">
+          <p class="text-small text-muted">Any picture or diagram goes inside.</p>
+        </ScreenFrame>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Pipeline diagram (step 3 active, one retry, one skip, one self step)</h3>
+        <div data-diagram class="flex flex-col gap-5">
+          <ScreenFrame caption={pipelineFixture.caption} signal>
+            <PipelineDiagram diagram={pipelineFixture} activeStep={2} />
+          </ScreenFrame>
+          <DiagramSteps
+            steps={pipelineFixture.steps}
+            nodes={pipelineFixture.nodes}
+            activeStep={2}
+            idPrefix="lab-pipe"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">
+          Phone drawings (a 22rem column: sequence without message text, vertical pipeline)
+        </h3>
+        <div class="lab-narrow flex flex-col gap-5">
+          <div data-diagram class="flex flex-col gap-5">
+            <ScreenFrame caption={sequenceFixture.caption} signal>
+              <SequenceDiagram diagram={sequenceFixture} activeStep={1} />
+            </ScreenFrame>
+            <DiagramSteps
+              steps={sequenceFixture.steps}
+              nodes={sequenceFixture.nodes}
+              activeStep={1}
+              idPrefix="lab-narrow-seq"
+            />
+          </div>
+          <div data-diagram class="flex flex-col gap-5">
+            <ScreenFrame caption={pipelineFixture.caption} signal>
+              <PipelineDiagram diagram={pipelineFixture} activeStep={3} />
+            </ScreenFrame>
+            <DiagramSteps
+              steps={pipelineFixture.steps}
+              nodes={pipelineFixture.nodes}
+              activeStep={3}
+              idPrefix="lab-narrow-pipe"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Decision log (all three kinds)</h3>
+        <DecisionLog items={decisionsFixture} />
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Code block (always dark; a long line scrolls inside)</h3>
+        <CodeBlock code={structureFixture.tree} label="Sample folder tree" />
+        <CodeBlock
+          code="a line that is much longer than the screen so the block has to scroll sideways inside itself instead of widening the page"
+          label="Sample long line"
+        />
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Tool list</h3>
+        <ToolList items={toolsFixture.groups[0]!.items} />
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Rule list</h3>
+        <RuleList items={rulesFixture.items} />
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-section" aria-labelledby="lab-sections">
+      <h2 id="lab-sections" class="text-h2">
+        Project sections
+      </h2>
+      <p class="max-w-prose text-small text-muted">
+        The sections as a project page composes them, with a sequence diagram. Filters on the list work.
+      </p>
+      <ProjectHeader project={sampleProject} />
+      <ProjectOverview paragraphs={sampleProject.overview} />
+      <ProjectArchitecture diagram={sequenceFixture} idPrefix="lab-seq" />
+      <ProjectStructure structure={structureFixture} />
+      <ProjectTools tools={toolsFixture} />
+      <ProjectDecisions items={decisionsFixture} />
+      <ProjectRules rules={rulesFixture} />
+      <ProjectConnections projectTitle={sampleProject.title} outgoing={outgoing} incoming={incoming} />
+      <ProjectList projects={fixtureProjects} />
+    </section>
   </div>
 </BaseLayout>
 
 <style>
-  /* Lab-only component tokens; the real blocks will take over these rules. */
-  .screen-frame {
-    --shot-border: 1px;
-    --shot-padding: var(--space-5);
-    max-width: 28rem;
-    padding: var(--shot-padding);
-    border: var(--shot-border) solid transparent;
-    border-radius: var(--radius-lg);
-    background:
-      linear-gradient(var(--surface-1), var(--surface-1)) padding-box,
-      linear-gradient(135deg, var(--signal-glow), transparent 50%, var(--signal-2)) border-box;
-    box-shadow: var(--glow-shot);
-  }
-
-  .screen-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .screen-bar {
-    height: var(--space-4);
-    border-radius: var(--radius-sm);
-    background-color: var(--surface-2);
-  }
-
-  .screen-bar-short {
-    width: 40%;
-  }
-
-  .screen-bar-mid {
-    width: 70%;
-  }
-
-  .diagram-node {
-    --node-padding-x: var(--space-4);
-    padding: var(--space-2) var(--node-padding-x);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background-color: var(--surface-2);
-    font-family: var(--font-mono);
-    font-size: var(--text-mono);
-    transition:
-      border-color var(--dur-base) var(--ease-out),
-      box-shadow var(--dur-base) var(--ease-out),
-      color var(--dur-base) var(--ease-out);
-  }
-
-  .diagram-node[data-active] {
-    border-color: var(--signal);
-    color: var(--signal);
-    box-shadow: var(--glow-node);
-  }
-
-  .diagram-edge {
-    width: 15rem;
-    height: var(--space-5);
-  }
-
-  .edge-base,
-  .edge-run {
-    fill: none;
-    stroke-width: 2;
-  }
-
-  .edge-base {
-    stroke: var(--line);
-  }
-
-  .edge-run {
-    stroke: var(--signal-glow);
-    filter: drop-shadow(0 0 3px var(--signal-glow));
+  /* Lab-only: a narrow column to show the phone drawings of the diagrams. */
+  .lab-narrow {
+    --lab-narrow-width: 22rem;
+    max-width: var(--lab-narrow-width);
   }
 
   .ambient-stage {

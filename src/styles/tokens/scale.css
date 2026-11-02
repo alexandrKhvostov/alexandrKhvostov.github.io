@@ -18,6 +18,8 @@
   --prose-width: 68ch;
   --gutter: var(--space-4);
   --section-gap: var(--space-8);
+  --toc-width: 200px;
+  --topbar-height: var(--space-8);
 
   /* font families */
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;

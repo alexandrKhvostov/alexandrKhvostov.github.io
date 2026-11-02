@@ -4,6 +4,7 @@
 @import "./themes/signal-dark.css";
 @import "./themes/signal-light.css";
 @import "./tailwind.css";
+@import "./diagram.css";
 
 @layer base {
   html {
@@ -14,7 +15,7 @@
     line-height: var(--text-body--line-height);
     text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
-    scroll-padding-top: var(--space-8);
+    scroll-padding-top: var(--space-9);
   }
 
   body {
@@ -147,6 +148,38 @@
   animation: ambient-drift var(--dur-ambient) ease-in-out infinite alternate;
 }
 
+/* Reveal: a lower section fades in once when scrolled into view (src/scripts/reveal.ts adds data-revealed).
+   Without scripting everything is simply visible. */
+@media (scripting: enabled) {
+  [data-reveal] {
+    transition:
+      opacity var(--dur-enter) var(--ease-out),
+      transform var(--dur-enter) var(--ease-out);
+  }
+
+  [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(var(--enter-shift));
+  }
+}
+
+/* Page-to-page morph: native cross-document view transitions. Titles carry a view-transition-name
+   (project-<slug>) in the row and in the header, so the title flies from one to the other. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+::view-transition-group(*) {
+  animation-duration: var(--dur-enter);
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-group(root) {
+  animation-duration: var(--dur-base);
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-fast: 0ms;
@@ -171,5 +204,10 @@
 
   [data-signal] {
     display: none;
+  }
+
+  [data-reveal]:not([data-revealed]) {
+    opacity: 1;
+    transform: none;
   }
 }

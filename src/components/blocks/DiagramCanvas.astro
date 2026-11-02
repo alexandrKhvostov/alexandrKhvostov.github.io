@@ -1,0 +1,76 @@
+---
+import type { DiagramLayout } from "@/lib/diagram-layout";
+
+interface Props {
+  layout: DiagramLayout;
+  /** Which drawing this is; CSS shows one of the two depending on the width of the frame. */
+  variant: "wide" | "narrow";
+  /** Text equivalent; the numbered steps list carries the detail. */
+  label: string;
+  /** Step shown as active in the markup, before any script runs. */
+  activeStep?: number;
+}
+
+const { layout, variant, label, activeStep = 0 } = Astro.props;
+
+const active = layout.edges.find((edge) => edge.step === activeStep);
+const activeEnds = new Set(active ? [active.from, active.to] : []);
+const on = (condition: boolean) => (condition ? "" : undefined);
+---
+
+<svg
+  class="dg"
+  data-variant={variant}
+  viewBox={`0 0 ${layout.width} ${layout.height}`}
+  font-size={layout.fontSize}
+  role="img"
+  aria-label={label}
+>
+  {layout.lifelines.map((line) => (
+    <line
+      class="dg-lifeline"
+      data-lifeline={line.id}
+      data-active={on(activeEnds.has(line.id))}
+      x1={line.x}
+      y1={line.y1}
+      x2={line.x}
+      y2={line.y2}
+    />
+  ))}
+  {layout.edges.map((edge) => (
+    <g
+      class="dg-edge"
+      data-edge
+      data-step={edge.step}
+      data-from={edge.from}
+      data-to={edge.to}
+      data-active={on(edge.step === activeStep)}
+    >
+      <path class="dg-line" d={edge.path} />
+      <polygon class="dg-head" points={edge.head} />
+      <path class="dg-run" d={edge.path} pathLength="100" data-signal />
+      {edge.label?.lines.map((line) => (
+        <text class="dg-label" x={edge.label!.x} y={line.y} text-anchor={edge.label!.anchor}>
+          {line.text}
+        </text>
+      ))}
+      <g class="dg-badge">
+        <circle cx={edge.badge.x} cy={edge.badge.y} r={layout.badgeRadius} />
+        <text x={edge.badge.x} y={edge.badge.y + layout.fontSize * 0.35} font-size={layout.fontSize - 2}>
+          {edge.step + 1}
+        </text>
+      </g>
+      <path class="dg-hit" d={edge.path} />
+    </g>
+  ))}
+  {layout.nodes.map((node) => (
+    <g class="dg-node" data-node={node.id} data-active={on(activeEnds.has(node.id))}>
+      <rect x={node.x} y={node.y} width={node.width} height={node.height} />
+      {node.lines.map((line) => (
+        <text x={node.cx} y={line.y}>
+          {line.text}
+        </text>
+      ))}
+    </g>
+  ))}
+</svg>

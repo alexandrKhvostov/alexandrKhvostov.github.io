@@ -1,10 +1,22 @@
 ---
+import ProjectList from "@/components/sections/ProjectList.astro";
+import { loadProjects } from "@/content/load";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { homeDescription, homeLead, homeTitle } from "@/lib/site";
+
+const projects = await loadProjects();
 ---
 
-<BaseLayout>
-  <section class="py-section">
-    <h1 class="text-display">Alexandr Khvostov</h1>
-    <p class="mt-4 text-lead text-muted">Architecture notes, work in progress</p>
-  </section>
+<BaseLayout title={homeTitle} description={homeDescription}>
+  <div class="flex flex-col gap-7 pt-7 pb-section">
+    <div class="flex flex-col gap-4">
+      <h1 data-enter style="--i: 0" class="text-display">
+        Projects
+      </h1>
+      <p data-enter style="--i: 1" class="max-w-prose text-lead text-muted">
+        {homeLead}
+      </p>
+    </div>
+    <ProjectList projects={projects} />
+  </div>
 </BaseLayout>

@@ -1,0 +1,29 @@
+---
+interface Props {
+  code: string;
+  /** Names the block for screen readers, which land on it to scroll. */
+  label: string;
+  class?: string;
+}
+
+const { code, label, class: className } = Astro.props;
+---
+
+<pre
+  tabindex="0"
+  role="region"
+  aria-label={label}
+  class:list={[
+    "code-block overflow-x-auto rounded-md bg-code-bg p-4 font-mono text-mono text-code-ink",
+    className,
+  ]}
+><code>{code.trimEnd()}</code></pre>
+
+<style>
+  /* Always dark, in both themes. A long line scrolls inside the block, never the page. */
+  .code-block {
+    --code-tab-size: 2;
+    tab-size: var(--code-tab-size);
+    max-width: 100%;
+  }
+</style>

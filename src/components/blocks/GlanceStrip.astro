@@ -1,0 +1,28 @@
+---
+import type { Glance } from "@/lib/types";
+
+interface Props {
+  items: Glance[];
+}
+
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <dl class="glance grid gap-x-5 gap-y-4 border-y border-line py-5">
+    {items.map((item) => (
+      <div class="flex flex-col gap-1">
+        <dt class="order-2 text-small text-muted">{item.label}</dt>
+        <dd class="order-1 font-mono text-h2 text-ink">{item.value}</dd>
+      </div>
+    ))}
+  </dl>
+)}
+
+<style>
+  /* Up to four facts: as many columns as fit, two on a phone. */
+  .glance {
+    --glance-min: 9rem;
+    grid-template-columns: repeat(auto-fit, minmax(var(--glance-min), 1fr));
+  }
+</style>

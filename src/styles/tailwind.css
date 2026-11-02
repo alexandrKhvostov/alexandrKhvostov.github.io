@@ -35,6 +35,9 @@
   --color-company-playme: var(--company-playme);
   --color-company-sysgears: var(--company-sysgears);
   --color-company-side: var(--company-side);
+  --color-kind-decision: var(--kind-decision);
+  --color-kind-trade-off: var(--kind-trade-off);
+  --color-kind-next: var(--kind-next);
   --color-transparent: transparent;
   --color-current: currentColor;
 

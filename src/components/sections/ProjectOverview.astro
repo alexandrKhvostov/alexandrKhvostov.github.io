@@ -1,0 +1,16 @@
+---
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+
+interface Props {
+  paragraphs: string[];
+}
+
+const { paragraphs } = Astro.props;
+---
+
+<section data-reveal aria-labelledby="overview" class="flex flex-col gap-4">
+  <SectionHeading id="overview" title="Overview" />
+  {paragraphs.map((paragraph) => (
+    <p class="max-w-prose">{paragraph}</p>
+  ))}
+</section>

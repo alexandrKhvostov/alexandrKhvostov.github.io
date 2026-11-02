@@ -1,0 +1,44 @@
+---
+interface Props {
+  /** Text under the picture. */
+  caption?: string;
+  /** The running signal inside pauses while the frame is off screen. */
+  signal?: boolean;
+  class?: string;
+  [attr: string]: unknown;
+}
+
+const { caption, signal = false, class: className, ...rest } = Astro.props;
+---
+
+<figure
+  {...rest}
+  data-signal-diagram={signal ? "" : undefined}
+  class:list={["screen-frame flex flex-col gap-4", className]}
+>
+  <slot />
+  {caption && <figcaption class="text-small text-muted">{caption}</figcaption>}
+</figure>
+
+<style>
+  /* The "screen": a gradient hairline from --signal to --signal-2 and the shot glow.
+     The frame is also the container that decides which drawing of a diagram is shown. */
+  .screen-frame {
+    --shot-border: 1px;
+    --shot-padding: var(--space-4);
+    container-type: inline-size;
+    padding: var(--shot-padding);
+    border: var(--shot-border) solid transparent;
+    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(var(--surface-1), var(--surface-1)) padding-box,
+      linear-gradient(135deg, var(--signal-glow), transparent 50%, var(--signal-2)) border-box;
+    box-shadow: var(--glow-shot);
+  }
+
+  @media (min-width: 640px) {
+    .screen-frame {
+      --shot-padding: var(--space-5);
+    }
+  }
+</style>

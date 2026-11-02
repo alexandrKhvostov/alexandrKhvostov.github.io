@@ -28,7 +28,9 @@ const { class: className, ...rest } = Astro.props;
     <circle cx="8" cy="8" r="5.25"></circle>
     <path d="M8 2.75a5.25 5.25 0 0 1 0 10.5z" fill="currentColor"></path>
   </svg>
-  <span data-theme-label>Theme</span>
+  <span data-theme-label class="max-sm:sr-only">
+    Theme
+  </span>
 </button>
 
 <script>

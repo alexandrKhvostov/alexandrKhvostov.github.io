@@ -1,0 +1,44 @@
+---
+import DiagramSteps from "@/components/blocks/DiagramSteps.astro";
+import PipelineDiagram from "@/components/blocks/PipelineDiagram.astro";
+import ScreenFrame from "@/components/blocks/ScreenFrame.astro";
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import SequenceDiagram from "@/components/blocks/SequenceDiagram.astro";
+import type { DiagramData } from "@/lib/types";
+
+interface Props {
+  diagram: DiagramData;
+  /** Makes element ids unique when a page holds more than one diagram. */
+  idPrefix?: string;
+}
+
+const { diagram, idPrefix = "step" } = Astro.props;
+---
+
+<section data-reveal aria-labelledby="architecture" class="flex flex-col gap-5">
+  <SectionHeading id="architecture" title="Architecture" />
+  <div data-diagram class="flex flex-col gap-5">
+    <div class="diagram-pin">
+      <ScreenFrame caption={diagram.caption} signal>
+        {diagram.type === "sequence" ? (
+          <SequenceDiagram diagram={diagram} />
+        ) : (
+          <PipelineDiagram diagram={diagram} />
+        )}
+      </ScreenFrame>
+    </div>
+    <DiagramSteps steps={diagram.steps} nodes={diagram.nodes} idPrefix={idPrefix} />
+  </div>
+</section>
+
+<style>
+  /* On a tall enough screen the drawing stays in view while the steps scroll under it, so selecting a
+     step never takes the diagram out of sight. */
+  @media (min-width: 640px) and (min-height: 700px) {
+    .diagram-pin {
+      position: sticky;
+      top: calc(var(--topbar-height) + var(--space-3));
+      z-index: 1;
+    }
+  }
+</style>

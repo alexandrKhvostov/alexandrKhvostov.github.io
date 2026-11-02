@@ -1,0 +1,24 @@
+---
+import CodeBlock from "@/components/blocks/CodeBlock.astro";
+import SectionHeading from "@/components/blocks/SectionHeading.astro";
+import type { Structure } from "@/lib/types";
+
+interface Props {
+  structure: Structure;
+}
+
+const { structure } = Astro.props;
+---
+
+<section data-reveal aria-labelledby="structure" class="flex flex-col gap-5">
+  <SectionHeading id="structure" title="Code structure" />
+  <CodeBlock code={structure.tree} label="Folder tree, scrolls sideways when wide" />
+  <ul class="flex flex-col">
+    {structure.notes.map((note) => (
+      <li class="flex flex-col gap-1 border-t border-line py-3 first:border-t-0 first:pt-0">
+        <code class="w-fit max-w-full break-all">{note.path}</code>
+        <p class="max-w-prose text-muted">{note.why}</p>
+      </li>
+    ))}
+  </ul>
+</section>

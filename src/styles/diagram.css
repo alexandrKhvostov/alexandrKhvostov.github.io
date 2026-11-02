@@ -1,0 +1,166 @@
+/* Diagram parts. The blocks render inline SVG with these classes and data attributes, and the colors come
+   only from semantic tokens, so a diagram repaints with the theme. Active state is data-active, set on the
+   markup for step 1 and moved by src/scripts/diagram.ts. */
+
+:root {
+  /* component tokens: geometry numbers are viewBox units, so they scale with the drawing */
+  --dg-stroke: 1px;
+  --dg-edge-width: 2px;
+  --dg-run-width: 3px;
+  --dg-hit-width: 16px;
+  --dg-lifeline-dash: 4 5;
+  --dg-narrow-max: 30rem;
+  /* width of the frame-colored halo behind message labels, so lines pass behind the text */
+  --dg-halo-width: 6px;
+  /* hairline tokens are too faint to carry meaning, so a resting edge is the muted text color, softened */
+  --dg-edge: color-mix(in oklab, var(--muted) 60%, transparent);
+}
+
+/* Two drawings per diagram, a wide one and a narrow one; the container width picks which is shown.
+   The switch point is 36rem (the container is the screen frame). */
+.dg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-mono);
+}
+
+.dg[data-variant="wide"] {
+  display: none;
+}
+
+.dg[data-variant="narrow"] {
+  max-width: var(--dg-narrow-max);
+  margin-inline: auto;
+}
+
+@container (min-width: 36rem) {
+  .dg[data-variant="wide"] {
+    display: block;
+  }
+
+  .dg[data-variant="narrow"] {
+    display: none;
+  }
+}
+
+.dg-node {
+  transition: filter var(--dur-base) var(--ease-out);
+}
+
+.dg-node rect {
+  rx: var(--radius-sm);
+  fill: var(--surface-2);
+  stroke: var(--line-strong);
+  stroke-width: var(--dg-stroke);
+  transition:
+    stroke var(--dur-base) var(--ease-out),
+    fill var(--dur-base) var(--ease-out);
+}
+
+.dg-node text {
+  fill: var(--ink);
+  text-anchor: middle;
+  transition: fill var(--dur-base) var(--ease-out);
+}
+
+.dg-node[data-active] {
+  filter: drop-shadow(var(--glow-node));
+}
+
+.dg-node[data-active] rect {
+  stroke: var(--signal);
+}
+
+.dg-node[data-active] text {
+  fill: var(--signal);
+}
+
+.dg-lifeline {
+  stroke: var(--line-strong);
+  stroke-width: var(--dg-stroke);
+  stroke-dasharray: var(--dg-lifeline-dash);
+  transition: stroke var(--dur-base) var(--ease-out);
+}
+
+.dg-lifeline[data-active] {
+  stroke: color-mix(in oklab, var(--signal) 55%, transparent);
+}
+
+.dg-line {
+  fill: none;
+  stroke: var(--dg-edge);
+  stroke-width: var(--dg-edge-width);
+  transition: stroke var(--dur-base) var(--ease-out);
+}
+
+.dg-head {
+  fill: var(--dg-edge);
+  transition: fill var(--dur-base) var(--ease-out);
+}
+
+.dg-label {
+  fill: var(--muted);
+  stroke: var(--surface-1);
+  stroke-width: var(--dg-halo-width);
+  stroke-linejoin: round;
+  paint-order: stroke;
+  transition: fill var(--dur-base) var(--ease-out);
+}
+
+.dg-badge circle {
+  fill: var(--surface-1);
+  stroke: var(--dg-edge);
+  stroke-width: var(--dg-stroke);
+  transition:
+    fill var(--dur-base) var(--ease-out),
+    stroke var(--dur-base) var(--ease-out);
+}
+
+.dg-badge text {
+  fill: var(--muted);
+  text-anchor: middle;
+  transition: fill var(--dur-base) var(--ease-out);
+}
+
+.dg-run {
+  display: none;
+  fill: none;
+  stroke: var(--signal-glow);
+  stroke-width: var(--dg-run-width);
+  filter: drop-shadow(0 0 3px var(--signal-glow));
+}
+
+.dg-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: var(--dg-hit-width);
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.dg-edge[data-active] .dg-line {
+  stroke: var(--signal);
+}
+
+.dg-edge[data-active] .dg-head {
+  fill: var(--signal);
+}
+
+.dg-edge[data-active] .dg-label {
+  fill: var(--signal);
+}
+
+.dg-edge[data-active] .dg-badge circle {
+  fill: var(--signal);
+  stroke: var(--signal);
+}
+
+.dg-edge[data-active] .dg-badge text {
+  fill: var(--bg);
+}
+
+.dg-edge[data-active] .dg-run {
+  display: inline;
+}
