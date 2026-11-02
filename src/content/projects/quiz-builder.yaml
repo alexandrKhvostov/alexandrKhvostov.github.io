@@ -134,6 +134,68 @@ tools:
           does: Changes a plan's own fields and returns the packs that use it, as a preview of the impact.
         - name: promote_subscription_pack
           does: Re-creates a pack and its missing plans on another stage under the same keys. A second run reports that the pack is already there.
+showcase:
+  title: A funnel built by the agent
+  intro: Dualio is an AI photo and video app. The funnel linked below runs from a short quiz through sign-up to a scratch card with a discount and then the paywall. The agent wrote both configs, quiz and paywall, through the builder's tools, and the web app renders them with the quiz library.
+  link:
+    label: Open the live funnel
+    url: https://dualio.ai/quiz/flow5gl
+  screens:
+    - image: ../../assets/projects/quiz-builder/01-question.jpg
+      alt: A dark phone screen with a progress bar and back arrow at the top, the question "What vibe do you want for your video?" and five emoji answer buttons.
+      caption: Single-choice step
+    - image: ../../assets/projects/quiz-builder/02-loader.jpg
+      alt: A loading screen with the text "Creating your perfect look" and a percentage, laid over a looping background video.
+      caption: Progress-sequence loader with a background video set in the step's layout
+    - image: ../../assets/projects/quiz-builder/03-registration.jpg
+      alt: A sign-up screen with a "Continue with Google" button, name and email fields, two checkboxes for terms and marketing, and a Continue button.
+      caption: Pre-registration step
+    - image: ../../assets/projects/quiz-builder/04-scratch-card.jpg
+      alt: A screen titled "Your reward is waiting" with a card covered by a scratch layer and the hint "Scratch it off".
+      caption: Scratch-card step that unlocks the discount
+    - image: ../../assets/projects/quiz-builder/05-paywall.jpg
+      alt: A paywall with a row of trend video cards at the top, a ticket showing the applied promo code and a countdown, and three subscription plans with a price per day.
+      caption: Paywall with promo code, countdown and plans
+    - image: ../../assets/projects/quiz-builder/06-checkout.jpg
+      alt: A checkout drawer over the paywall with the regular price, the discount, the applied promo code and the total, followed by card fields and a Pay button.
+      caption: Checkout drawer with the discount breakdown
+  points:
+    - "The quiz config has 10 steps of 6 types: static info, single choice, photo upload, progress sequence, registration and scratch card. The quiz library allows 17 step types."
+    - "Each step can override its own layout, such as the header, progress bar, navigation, buttons and a looping background video. The look itself is one theme for the whole funnel, chosen by the web app from the quiz id."
+    - "Every step has an analytics name, and all quiz events go through one analytics class that adds the quiz id. The standard events are quiz_step_view, sign_up_view, sign_up_try, sign_up_scs, sign_up_fail and scratch_card, and the paywall adds sale events such as sale_view and sale_scs."
+    - "Events reach Google Analytics 4 through Google Tag Manager, and ad pixels, Meta among them, run through the same container."
+    - "The quiz names the paywall to open next, so the two configs are separate files linked by an id."
+    - "A US variant, saved as separate @us files, changes the legal texts, the pricing pack and the timer settings. The web app picks it by country and falls back to the default files, so these differences live in the config and not in code."
+    - "The paywall config names its subscription pack by key. The plans and prices come from the catalog that the builder manages, where the per-day prices are computed on the server."
+  excerpt:
+    caption: "One step of the config the agent wrote: the question, three of the five answers, header settings, the next step and the analytics fields."
+    code: |
+      {
+        "id": "q_vibe",
+        "type": "single-choice",
+        "content": {
+          "title": "What vibe do you want for your video?",
+          "options": [
+            { "label": "✨ Viral Edit", "value": "viral-edit" },
+            { "label": "🍿 Movie Scene", "value": "movie-scene" },
+            { "label": "⚡ Epic Moment", "value": "epic-moment" }
+          ]
+        },
+        "layout": {
+          "header": {
+            "showCount": false,
+            "showNavigation": true,
+            "showProgress": true
+          }
+        },
+        "logic": {
+          "nextStepId": "q_most_important"
+        },
+        "metadata": {
+          "analyticsName": "Choose Vibe",
+          "trait": "videoVibe"
+        }
+      }
 decisions:
   - kind: decision
     title: Production only through promote
