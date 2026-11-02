@@ -24,26 +24,40 @@ const groups = [
         <h3 id={group.id} class="text-h3">
           {group.title}
         </h3>
-        <ul class="flex flex-col" aria-labelledby={group.id}>
+        <ul class="-mx-3 flex flex-col" aria-labelledby={group.id}>
           {group.items.map((item) => {
             const name = item.href ? (
-              <a href={item.href} class="font-medium">
+              <a href={item.href} class="connection-link font-medium underline decoration-signal/40">
                 {item.label}
               </a>
             ) : (
               <span class="font-medium text-ink">{item.label}</span>
             );
             return (
-              <li class="max-w-prose border-t border-line py-3 text-muted first:border-t-0">
-                {group.direction === "out" ? (
-                  <>
-                    {projectTitle} {item.edgeLabel} {name}
-                  </>
-                ) : (
-                  <>
-                    {name} {item.edgeLabel} {projectTitle}
-                  </>
-                )}
+              <li
+                class:list={[
+                  "connection max-w-prose border-t border-line text-muted first:border-t-0",
+                  item.href && "connection-linked",
+                ]}
+              >
+                <div class="connection-body relative flex items-center justify-between gap-3 rounded-sm px-3 py-3">
+                  <span>
+                    {group.direction === "out" ? (
+                      <>
+                        {projectTitle} {item.edgeLabel} {name}
+                      </>
+                    ) : (
+                      <>
+                        {name} {item.edgeLabel} {projectTitle}
+                      </>
+                    )}
+                  </span>
+                  {item.href && (
+                    <span aria-hidden="true" class="connection-arrow text-ink">
+                      →
+                    </span>
+                  )}
+                </div>
               </li>
             );
           })}
@@ -52,3 +66,69 @@ const groups = [
     ))}
   </section>
 )}
+
+<style>
+  /* A row that names another project of this site opens it: the link's box stretches over the row, an
+     arrow says so on touch, and the row answers hover and press like a project card. Rows that name an
+     outside system (S3, AI clients) stay plain text, so the two kinds read apart without relying on color. */
+  .connection-body {
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  .connection-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  .connection-link:focus-visible {
+    outline: none;
+  }
+
+  .connection-link:focus-visible::after {
+    outline: var(--ring-width) solid var(--signal);
+    outline-offset: var(--ring-offset);
+  }
+
+  .connection-link {
+    -webkit-tap-highlight-color: transparent;
+    transition: text-decoration-color var(--dur-fast) var(--ease-out);
+  }
+
+  .connection-arrow {
+    transition:
+      color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  .connection-linked .connection-body:active {
+    --press-scale: 0.99;
+    background-color: var(--surface-1);
+    transform: scale(var(--press-scale));
+    transition-duration: var(--dur-press);
+  }
+
+  .connection-linked .connection-body:active .connection-arrow,
+  .connection-linked .connection-body:has(:focus-visible) .connection-arrow {
+    color: var(--signal);
+    transform: translateX(var(--space-1));
+  }
+
+  @media (hover: hover) {
+    .connection-linked .connection-body:hover {
+      background-color: var(--surface-1);
+    }
+
+    .connection-linked .connection-body:hover .connection-link {
+      text-decoration-color: var(--signal);
+    }
+
+    .connection-linked .connection-body:hover .connection-arrow {
+      color: var(--signal);
+      transform: translateX(var(--space-1));
+    }
+  }
+</style>

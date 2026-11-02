@@ -208,6 +208,7 @@ All states use semantic tokens. Focus is always a 2px `--signal` ring with 2px o
 - **Showcase strip:** phone screenshots in slim screen frames (`--radius-lg`, gradient hairline, `--glow-shot`) with the caption under each, in one row that scrolls inside itself with scroll-snap on every width (about 70% of the screen on phones so the next one peeks, 240px from 640px up); the scroller is focusable and labelled. Points follow as hairline rows, then an optional excerpt in the code block.
 - **Code structure:** the folder tree in a code block (always dark, scrolls inside itself on a narrow screen, never widens the page), then notes as a hairline-separated list: path in mono, the reason as body text.
 - **Tools list:** a group is an h3 with an optional note, then hairline-separated rows: name in mono, what it does beside it from 640px up and below it on phones. A list, not a grid of cards.
+- **Connected projects:** one sentence per row, "this project <does> <that one>". A row naming another page of this site is one link: the name underlined (`--signal` at 40 %, full on hover), an arrow → at the end, a `--surface-1` background on hover and a 0.99 press. A row naming an outside system (S3, AI clients) is plain text with the name in `--ink`, no underline and no arrow.
 - **Section anchor:** `#` beside each section heading, visible on hover and focus, copies a link to the section.
 
 ---
