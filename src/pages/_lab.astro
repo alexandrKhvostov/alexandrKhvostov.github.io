@@ -7,6 +7,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import {
   colorRoles,
   fontRoles,
+  glowRoles,
   motionRoles,
   otherThemeRoles,
   radiusRoles,
@@ -18,7 +19,7 @@ import { themes } from "@/styles/themes/index";
 // Served at /lab by the lab-dev-only integration in astro.config.mjs. The leading underscore keeps
 // Astro's file router from building it, so `astro build` ships neither the page nor its script.
 
-const groups = ["canvas", "line", "text", "accent", "code", "tone"] as const;
+const groups = ["canvas", "line", "text", "signal", "code", "company"] as const;
 const variants = ["primary", "secondary", "quiet"] as const;
 const states = [
   { id: "default", demo: undefined, disabled: false },
@@ -26,13 +27,14 @@ const states = [
   { id: "focus", demo: "focus", disabled: false },
   { id: "disabled", demo: undefined, disabled: true },
 ] as const;
-const tones = ["author", "runtime", "infra", "product"] as const;
+const companies = ["playme", "sysgears", "side"] as const;
+const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
 ---
 
 <BaseLayout title="Lab" noindex>
   <div class="flex flex-col gap-section py-7">
     <header class="flex flex-col gap-3">
-      <p class="font-mono text-eyebrow text-muted uppercase">Dev only, not built, not linked</p>
+      <p class="font-mono text-mono text-muted">Dev only, not built, not linked</p>
       <h1 class="text-h1">Lab</h1>
       <p class="max-w-prose text-muted">
         Every token and component in every state. Change a color with the pickers, copy the result as CSS,
@@ -76,7 +78,7 @@ const tones = ["author", "runtime", "infra", "product"] as const;
       >No edits yet.</pre>
       {groups.map((group) => (
         <div class="flex flex-col gap-3">
-          <h3 class="font-mono text-eyebrow text-muted uppercase">{group}</h3>
+          <h3 class="font-mono text-mono text-muted">{group}</h3>
           <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {colorRoles
               .filter((role) => role.group === group)
@@ -89,7 +91,7 @@ const tones = ["author", "runtime", "infra", "product"] as const;
                   <span class="flex min-w-0 flex-1 flex-col">
                     <code class="truncate">--{role.name}</code>
                     <span class="truncate text-small text-muted">{role.use}</span>
-                    <span class="truncate font-mono text-eyebrow text-muted" data-lab-value />
+                    <span class="truncate font-mono text-mono text-muted" data-lab-value />
                   </span>
                   <input
                     type="color"
@@ -103,24 +105,26 @@ const tones = ["author", "runtime", "infra", "product"] as const;
         </div>
       ))}
       <div class="flex flex-col gap-3">
-        <h3 class="font-mono text-eyebrow text-muted uppercase">Tone backgrounds</h3>
+        <h3 class="font-mono text-mono text-muted">Project rows</h3>
         <p class="text-small text-muted">
-          Tint = tone mixed into surface-1 by <code>--tone-tint</code>; the rail and dot use the tone itself.
+          A 4px left edge in the company color; hover lifts the border to <code>--signal-2</code> with a soft
+          glow.
         </p>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="author">
-            <span class="tone-demo-dot"></span> author
-          </div>
-          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="runtime">
-            <span class="tone-demo-dot"></span> runtime
-          </div>
-          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="infra">
-            <span class="tone-demo-dot"></span> infra
-          </div>
-          <div class="tone-demo rounded-md border border-line p-3 text-small" data-tone="product">
-            <span class="tone-demo-dot"></span> product
-          </div>
-        </div>
+        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {companies.map((company) => (
+            <li
+              class:list={[
+                "flex flex-col gap-1 rounded-md border border-l-4 border-line bg-surface-1 p-4 transition-shadow duration-fast ease-out hover:border-signal-2 hover:shadow-glow-row",
+                company === "playme" && "border-l-company-playme hover:border-l-company-playme",
+                company === "sysgears" && "border-l-company-sysgears hover:border-l-company-sysgears",
+                company === "side" && "border-l-company-side hover:border-l-company-side",
+              ]}
+            >
+              <span class="text-h3">Project in {company}</span>
+              <span class="text-small text-muted">One sentence about what the system does.</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
 
@@ -144,18 +148,15 @@ const tones = ["author", "runtime", "infra", "product"] as const;
             <code class="text-small text-muted">
               --font-{role.name} · {role.use}
             </code>
-            <p class:list={[role.cls, role.name === "accent" && "italic", "text-h3"]}>
-              Architecture notes 0123456789
-            </p>
+            <p class:list={[role.cls, "text-h3"]}>Architecture notes 0123456789</p>
           </li>
         ))}
       </ul>
-      <p class="font-mono text-eyebrow text-muted uppercase">Eyebrow: mono, uppercase</p>
     </section>
 
     <section class="flex flex-col gap-5" aria-labelledby="lab-shape">
       <h2 id="lab-shape" class="text-h2">
-        Radius, space, depth, motion
+        Radius, space, motion
       </h2>
       <ul class="flex flex-wrap gap-4">
         {radiusRoles.map((role) => (
@@ -169,14 +170,11 @@ const tones = ["author", "runtime", "infra", "product"] as const;
         {spaceRoles.map((role) => (
           <li class="flex items-center gap-3">
             <code class="w-9 shrink-0 text-small text-muted">--space-{role.step}</code>
-            <span class:list={["block h-3 rounded-sm bg-accent-fill", role.cls]} />
+            <span class:list={["block h-3 rounded-sm bg-signal", role.cls]} />
           </li>
         ))}
       </ul>
       <div class="flex flex-wrap gap-4">
-        <div class="rounded-md border border-line bg-surface-1 p-5 shadow-pop">
-          <code class="text-small text-muted">--shadow-pop</code>
-        </div>
         {motionRoles.map((role) => (
           <div class="flex flex-col gap-2">
             <button
@@ -192,6 +190,97 @@ const tones = ["author", "runtime", "infra", "product"] as const;
           </div>
         ))}
       </div>
+    </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-glow">
+      <h2 id="lab-glow" class="text-h2">
+        Glow
+      </h2>
+      <p class="max-w-prose text-small text-muted">
+        Glow belongs to diagrams and screens, never to text or whole cards. Strength follows the theme: full
+        in dark, about a third in light.
+      </p>
+
+      <ul class="flex flex-wrap gap-5">
+        {glowRoles.map((role) => (
+          <li class="flex flex-col gap-3">
+            <span class:list={["block h-8 w-9 rounded-md border border-line bg-surface-2", role.cls]} />
+            <code class="text-small text-muted">
+              --glow-{role.name} · {role.use}
+            </code>
+          </li>
+        ))}
+      </ul>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Screen frame</h3>
+        <figure class="screen-frame" aria-label="Sample screen frame">
+          <div class="screen-body">
+            <span class="screen-bar"></span>
+            <span class="screen-bar screen-bar-short"></span>
+            <span class="screen-bar screen-bar-mid"></span>
+          </div>
+        </figure>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Diagram: node, edge, signal</h3>
+        <div class="flex flex-wrap items-center gap-5">
+          <span class="diagram-node">Rest</span>
+          <span class="diagram-node" data-active>
+            Active
+          </span>
+          <svg
+            class="diagram-edge"
+            viewBox="0 0 240 24"
+            role="img"
+            aria-label="Edge with a signal running from the left node to the right node"
+            data-signal-diagram
+          >
+            <path d="M8 12 H232" pathLength="100" class="edge-base"></path>
+            <path d="M8 12 H232" pathLength="100" class="edge-run" data-signal></path>
+          </svg>
+          <span class="diagram-node">Source</span>
+          <span class="diagram-node" data-active>
+            Target
+          </span>
+        </div>
+        <p class="text-small text-muted">
+          The signal pauses while the diagram is off screen and is hidden under reduced motion.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Ambient glow</h3>
+        <div class="ambient-stage" aria-hidden="true">
+          <span class="ambient-glow" data-ambient></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-5" aria-labelledby="lab-entrance">
+      <h2 id="lab-entrance" class="text-h2">
+        Entrance
+      </h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <Button variant="secondary" data-lab-replay>
+          Replay entrance
+        </Button>
+        <span class="text-small text-muted">
+          Blocks fade and rise in sequence, <code>--stagger</code> apart.
+        </span>
+      </div>
+      <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4" data-lab-entrance>
+        {entranceBlocks.map((block, index) => (
+          <li
+            data-enter
+            style={`--i: ${index}`}
+            class="rounded-md border border-line bg-surface-1 p-4 text-small"
+          >
+            {block}
+          </li>
+        ))}
+      </ul>
     </section>
 
     <section class="flex flex-col gap-5" aria-labelledby="lab-components">
@@ -221,8 +310,8 @@ const tones = ["author", "runtime", "infra", "product"] as const;
         <div class="flex flex-wrap items-center gap-3">
           <Badge>Astro</Badge>
           <Badge>TypeScript</Badge>
-          {tones.map((tone) => (
-            <Badge tone={tone}>{tone}</Badge>
+          {companies.map((company) => (
+            <Badge company={company}>{company}</Badge>
           ))}
         </div>
       </div>
@@ -256,30 +345,96 @@ const tones = ["author", "runtime", "infra", "product"] as const;
 </BaseLayout>
 
 <style>
-  /* Lab-only component token: tone tint as DESIGN.md describes it. */
-  .tone-demo {
-    --tone: var(--tone-author);
-    background-color: color-mix(in oklab, var(--tone) var(--tone-tint), var(--surface-1));
+  /* Lab-only component tokens; the real blocks will take over these rules. */
+  .screen-frame {
+    --shot-border: 1px;
+    --shot-padding: var(--space-5);
+    max-width: 28rem;
+    padding: var(--shot-padding);
+    border: var(--shot-border) solid transparent;
+    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(var(--surface-1), var(--surface-1)) padding-box,
+      linear-gradient(135deg, var(--signal-glow), transparent 50%, var(--signal-2)) border-box;
+    box-shadow: var(--glow-shot);
   }
 
-  .tone-demo[data-tone="runtime"] {
-    --tone: var(--tone-runtime);
+  .screen-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
   }
 
-  .tone-demo[data-tone="infra"] {
-    --tone: var(--tone-infra);
+  .screen-bar {
+    height: var(--space-4);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface-2);
   }
 
-  .tone-demo[data-tone="product"] {
-    --tone: var(--tone-product);
+  .screen-bar-short {
+    width: 40%;
   }
 
-  .tone-demo-dot {
-    display: inline-block;
-    width: var(--space-2);
-    height: var(--space-2);
-    border-radius: var(--radius-pill);
-    background-color: var(--tone);
+  .screen-bar-mid {
+    width: 70%;
+  }
+
+  .diagram-node {
+    --node-padding-x: var(--space-4);
+    padding: var(--space-2) var(--node-padding-x);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    transition:
+      border-color var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out),
+      color var(--dur-base) var(--ease-out);
+  }
+
+  .diagram-node[data-active] {
+    border-color: var(--signal);
+    color: var(--signal);
+    box-shadow: var(--glow-node);
+  }
+
+  .diagram-edge {
+    width: 15rem;
+    height: var(--space-5);
+  }
+
+  .edge-base,
+  .edge-run {
+    fill: none;
+    stroke-width: 2;
+  }
+
+  .edge-base {
+    stroke: var(--line);
+  }
+
+  .edge-run {
+    stroke: var(--signal-glow);
+    filter: drop-shadow(0 0 3px var(--signal-glow));
+  }
+
+  .ambient-stage {
+    position: relative;
+    height: 12rem;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg);
+  }
+
+  .ambient-glow {
+    position: absolute;
+    top: calc(var(--space-7) * -1);
+    left: calc(var(--space-7) * -1);
+    width: 18rem;
+    height: 18rem;
+    filter: blur(var(--space-5));
   }
 </style>
 

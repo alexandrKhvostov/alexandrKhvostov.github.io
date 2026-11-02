@@ -1,0 +1,23 @@
+:root[data-theme="signal-dark"] {
+  color-scheme: dark;
+
+  --bg: var(--p-night-950);
+  --surface-1: var(--p-night-850);
+  --surface-2: var(--p-night-800);
+  --line: var(--p-night-700);
+  --line-strong: var(--p-night-600);
+  --ink: var(--p-mist-50);
+  --muted: var(--p-mist-400);
+  --signal: var(--p-cyan-400);
+  --signal-2: var(--p-violet-400);
+  --signal-glow: var(--p-cyan-400);
+  --code-bg: var(--p-night-900);
+  --code-ink: var(--p-mist-50);
+  --code-key: var(--p-cyan-400);
+
+  --company-playme: var(--p-cyan-400);
+  --company-sysgears: var(--p-teal-400);
+  --company-side: var(--p-amber-400);
+
+  --glow-strength: var(--p-glow-full);
+}

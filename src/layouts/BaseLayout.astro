@@ -1,7 +1,7 @@
 ---
 import "@/styles/global.css";
 import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
-import { defaultThemeForScheme, themes, themeStorageKey } from "@/styles/themes/index";
+import { defaultTheme, defaultThemeForScheme, themes, themeStorageKey } from "@/styles/themes/index";
 
 interface Props {
   title?: string;
@@ -21,20 +21,20 @@ const home = import.meta.env.BASE_URL;
 ---
 
 <!doctype html>
-<html lang="en" data-theme={defaultThemeForScheme.light}>
+<html lang="en" data-theme={defaultTheme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark light" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" href="data:," />
     <script
       is:inline
       define:vars={{ themeIds, storageKey: themeStorageKey, bySystemScheme: defaultThemeForScheme }}
     >
-      // Sets data-theme before first paint: the stored choice, else the system scheme.
+      // Sets data-theme before first paint: the stored choice, else dark unless the system asks for light.
       var theme;
       try {
         var stored = localStorage.getItem(storageKey);
@@ -43,8 +43,8 @@ const home = import.meta.env.BASE_URL;
         // Storage blocked: fall through to the system scheme.
       }
       if (!theme) {
-        var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        theme = bySystemScheme[dark ? "dark" : "light"];
+        var light = window.matchMedia("(prefers-color-scheme: light)").matches;
+        theme = bySystemScheme[light ? "light" : "dark"];
       }
       document.documentElement.dataset.theme = theme;
     </script>

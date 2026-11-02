@@ -1,8 +1,8 @@
 @import "./tokens/primitives.css";
 @import "./tokens/scale.css";
 @import "./fonts.css";
-@import "./themes/warm-light.css";
-@import "./themes/warm-dark.css";
+@import "./themes/signal-dark.css";
+@import "./themes/signal-light.css";
 @import "./tailwind.css";
 
 @layer base {
@@ -28,8 +28,16 @@
   h1,
   h2,
   h3 {
-    font-weight: 600;
     text-wrap: balance;
+  }
+
+  h1,
+  h2 {
+    font-weight: 700;
+  }
+
+  h3 {
+    font-weight: 600;
   }
 
   p {
@@ -37,7 +45,7 @@
   }
 
   a {
-    color: var(--accent);
+    color: var(--signal);
     text-underline-offset: 3px;
     text-decoration-thickness: 1px;
   }
@@ -60,13 +68,13 @@
   }
 
   ::selection {
-    background-color: var(--accent-fill);
-    color: var(--on-accent);
+    background-color: color-mix(in oklab, var(--signal) 30%, transparent);
+    color: var(--ink);
   }
 
   :focus-visible,
   [data-demo-state="focus"] {
-    outline: var(--ring-width) solid var(--accent);
+    outline: var(--ring-width) solid var(--signal);
     outline-offset: var(--ring-offset);
   }
 
@@ -83,12 +91,71 @@
   }
 }
 
+/* Motion building blocks. Tokens set the timing; components opt in with these data attributes. */
+
+/* Entrance: set --i (0, 1, 2 ...) on each block to stagger it by --stagger. */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--enter-shift));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-enter] {
+  animation: enter var(--dur-enter) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Signal: a short dash runs along a path drawn with pathLength="100". */
+@keyframes signal-run {
+  from {
+    stroke-dashoffset: 14;
+  }
+
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+[data-signal] {
+  stroke-dasharray: 14 86;
+  stroke-linecap: round;
+  animation: signal-run var(--dur-signal) linear infinite;
+}
+
+[data-paused] [data-signal] {
+  animation-play-state: paused;
+}
+
+@keyframes ambient-drift {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(var(--space-7), var(--space-6));
+  }
+}
+
+[data-ambient] {
+  background-image: var(--glow-ambient);
+  animation: ambient-drift var(--dur-ambient) ease-in-out infinite alternate;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-fast: 0ms;
     --dur-base: 0ms;
-    --dur-slow: 0ms;
-    --reveal-shift: 0px;
+    --dur-enter: 0ms;
+    --dur-signal: 0ms;
+    --dur-ambient: 0ms;
+    --stagger: 0ms;
+    --enter-shift: 0px;
   }
 
   html {
@@ -98,8 +165,11 @@
   *,
   *::before,
   *::after {
-    animation-duration: 0ms !important;
-    animation-iteration-count: 1 !important;
+    animation: none !important;
     transition-duration: 0ms !important;
+  }
+
+  [data-signal] {
+    display: none;
   }
 }

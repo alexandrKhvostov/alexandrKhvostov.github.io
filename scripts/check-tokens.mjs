@@ -11,7 +11,7 @@ const EXTENSIONS = [".astro", ".ts", ".js", ".mjs", ".css"];
 /** Paths (posix, relative to the repository root) where raw values are allowed. */
 const RAW_VALUE_ALLOWED = ["src/styles/tokens/", "src/styles/fonts.css"];
 
-const FONT_NAMES = ["IBM Plex", "Instrument Serif", "ibm-plex", "instrument-serif"];
+const FONT_NAMES = ["Geist"];
 
 /** [rule id, message, regex]. The hex rule skips private class members (`this.#abc`, `#abc = 1`) and word-glued hashes. */
 const RAW_VALUE_RULES = [

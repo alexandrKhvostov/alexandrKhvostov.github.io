@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { colorRoles, otherThemeRoles, typeRoles } from "../src/styles/roles.ts";
+import { colorRoles, glowRoles, motionRoles, otherThemeRoles, typeRoles } from "../src/styles/roles.ts";
 import { themes } from "../src/styles/themes/index.ts";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -43,10 +43,29 @@ test("themes set only roles and read only primitives for colors", () => {
   for (const theme of themes) {
     const css = read(`src/styles/themes/${theme.id}.css`);
     for (const [, name, value] of css.matchAll(/^\s*--([\w-]+):\s*([^;]+);/gm)) {
-      assert.ok(
-        /var\(--(p-|shadow-pop-shape)/.test(value) || value.trim() === "none",
-        `${theme.id}: --${name} is ${value}`,
-      );
+      assert.ok(/var\(--p-/.test(value), `${theme.id}: --${name} is ${value}`);
     }
+  }
+});
+
+test("glow and motion tokens exist in scale.css and are registered in tailwind.css", () => {
+  const scale = read("src/styles/tokens/scale.css");
+  const tailwind = read("src/styles/tailwind.css");
+  for (const name of ["dur-enter", "stagger", "dur-signal", "enter-shift"]) {
+    assert.ok(declares(scale, name), `scale.css is missing --${name}`);
+  }
+  for (const { name } of glowRoles) {
+    assert.ok(declares(scale, `glow-${name}`), `scale.css is missing --glow-${name}`);
+    assert.ok(
+      tailwind.includes(`--shadow-glow-${name}: var(--glow-${name});`),
+      `tailwind.css is missing --shadow-glow-${name}`,
+    );
+  }
+  assert.ok(declares(scale, "glow-ambient"), "scale.css is missing --glow-ambient");
+  for (const { name } of motionRoles) {
+    assert.ok(
+      tailwind.includes(`--transition-duration-${name}: var(--dur-${name});`),
+      `tailwind.css is missing the ${name} duration`,
+    );
   }
 });

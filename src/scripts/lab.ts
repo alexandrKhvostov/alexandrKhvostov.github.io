@@ -70,6 +70,31 @@ function say(message: string): void {
   if (status) status.textContent = message;
 }
 
+/** Replays the staggered entrance on the sample blocks: drop the animation, force a reflow, restore it. */
+function initEntrance(): void {
+  const blocks = document.querySelectorAll<HTMLElement>("[data-lab-entrance] [data-enter]");
+  document.querySelector("[data-lab-replay]")?.addEventListener("click", () => {
+    blocks.forEach((block) => {
+      block.style.animation = "none";
+      void block.offsetWidth;
+      block.style.removeProperty("animation");
+    });
+  });
+}
+
+/** A diagram's running signal pauses while the diagram is off screen. */
+function initSignalPause(): void {
+  const diagrams = document.querySelectorAll<SVGElement>("[data-signal-diagram]");
+  if (!("IntersectionObserver" in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) entry.target.removeAttribute("data-paused");
+      else entry.target.setAttribute("data-paused", "");
+    }
+  });
+  diagrams.forEach((diagram) => observer.observe(diagram));
+}
+
 export function initLab(): void {
   for (const item of items()) {
     const name = item.dataset.labRole!;
@@ -109,6 +134,9 @@ export function initLab(): void {
       say("Clipboard is blocked: select the block above and copy it by hand.");
     }
   });
+
+  initEntrance();
+  initSignalPause();
 
   document.addEventListener("themechange", () => {
     clearEdits();

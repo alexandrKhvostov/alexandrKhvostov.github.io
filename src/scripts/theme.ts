@@ -1,4 +1,4 @@
-import { defaultThemeForScheme, themes, themeStorageKey, type ThemeId } from "@/styles/themes/index";
+import { defaultTheme, themes, themeStorageKey, type ThemeId } from "@/styles/themes/index";
 
 const root = document.documentElement;
 
@@ -9,7 +9,7 @@ function isThemeId(value: string | null | undefined): value is ThemeId {
 /** The theme currently applied to the page. */
 export function currentTheme(): ThemeId {
   const applied = root.dataset.theme;
-  return isThemeId(applied) ? applied : defaultThemeForScheme.light;
+  return isThemeId(applied) ? applied : defaultTheme;
 }
 
 /** The theme after `id` in the list; wraps around. */
