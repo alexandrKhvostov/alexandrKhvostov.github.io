@@ -1,5 +1,5 @@
 /** Invented, neutral data for tests and for /lab. Nothing here describes a real project. */
-import type { Decision, DiagramData, Project, Rules, Structure, Tools } from "./types.ts";
+import type { Decision, DiagramData, Project, Rules, Showcase, Structure, Tools } from "./types.ts";
 
 export const sequenceFixture: DiagramData = {
   type: "sequence",
@@ -123,6 +123,26 @@ export const toolsFixture: Tools = {
       ],
     },
   ],
+};
+
+/** Text of a sample showcase. The screens carry no image here, because lib cannot import assets; /lab adds them. */
+export const showcaseFixture: Omit<Showcase, "screens"> & { screens: { alt: string; caption: string }[] } = {
+  title: "A sample result",
+  intro: "A sample paragraph on what was built with the system and why it is worth a look.",
+  link: { label: "Open the sample", url: "https://example.com/" },
+  screens: [
+    { alt: "Placeholder screen with a title and three options", caption: "A question with three options" },
+    { alt: "Placeholder screen with a ring in the middle", caption: "A loading step" },
+    { alt: "Placeholder screen with a picture and a button", caption: "An offer with one button" },
+  ],
+  points: [
+    "A sample point about something to notice in the screens.",
+    "A second sample point, written as one plain sentence.",
+  ],
+  excerpt: {
+    caption: "A piece of the data behind the sample.",
+    code: ["steps:", "  - type: question", "    options: 3", "  - type: loader"].join("\n"),
+  },
 };
 
 function makeProject(overrides: Partial<Project> & Pick<Project, "slug" | "title">): Project {

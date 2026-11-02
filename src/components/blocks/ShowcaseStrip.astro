@@ -1,0 +1,82 @@
+---
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+import ScreenFrame from "@/components/blocks/ScreenFrame.astro";
+import type { ShowcaseScreen } from "@/lib/types";
+
+interface Props {
+  screens: ShowcaseScreen[];
+  /** Names the scroller for screen readers, which land on it to scroll. */
+  label?: string;
+}
+
+const { screens, label = "Screens, scroll sideways" } = Astro.props;
+
+// Phones get small files: the frame is about 70% of the screen there and 240px from 640px up.
+const widths = [240, 480, 720];
+const sizes = "(min-width: 640px) 240px, 70vw";
+---
+
+<div tabindex="0" role="region" aria-label={label} class="strip">
+  <ul class="strip-list flex">
+    {screens.map((screen, index) => (
+      <li class="strip-item">
+        <figure class="flex flex-col gap-3">
+          <ScreenFrame tag="div" compact>
+            <Image
+              src={screen.image as ImageMetadata}
+              alt={screen.alt}
+              widths={widths}
+              sizes={sizes}
+              format="webp"
+              loading={index < 2 ? "eager" : "lazy"}
+              decoding="async"
+              class="strip-image"
+            />
+          </ScreenFrame>
+          <figcaption class="text-small text-muted">{screen.caption}</figcaption>
+        </figure>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  /* One row that scrolls inside itself, on every width: the page never scrolls sideways.
+     The padding leaves room for the glow, which the scroller would otherwise clip. */
+  .strip {
+    --strip-item-width: 70vw;
+    --strip-gap: var(--space-4);
+    --strip-pad: var(--space-5);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+  }
+
+  .strip-list {
+    gap: var(--strip-gap);
+    padding: var(--strip-pad);
+    padding-inline-end: calc(var(--strip-pad) + var(--strip-gap));
+    margin: 0;
+    list-style: none;
+  }
+
+  .strip-item {
+    flex: 0 0 var(--strip-item-width);
+    scroll-snap-align: start;
+    scroll-margin-inline-start: var(--strip-pad);
+  }
+
+  @media (min-width: 640px) {
+    .strip {
+      --strip-item-width: 15rem;
+    }
+  }
+
+  .strip-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+  }
+</style>

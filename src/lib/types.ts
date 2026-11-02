@@ -76,6 +76,35 @@ export interface Tools {
   groups: ToolGroup[];
 }
 
+/** What the Astro image helper gives lib: enough to size and name an image, nothing about how it is served. */
+export interface ImageSource {
+  src: string;
+  width: number;
+  height: number;
+  format: string;
+}
+
+export interface ShowcaseScreen {
+  image: ImageSource;
+  alt: string;
+  caption: string;
+}
+
+export interface Excerpt {
+  caption: string;
+  code: string;
+}
+
+/** A real result built with the system: screens, what to notice in them, optionally a piece of the data behind. */
+export interface Showcase {
+  title: string;
+  intro: string;
+  link?: ProjectLink | undefined;
+  screens: ShowcaseScreen[];
+  points: string[];
+  excerpt?: Excerpt | undefined;
+}
+
 export interface Connection {
   to: string;
   label: string;
@@ -101,6 +130,7 @@ export interface Project {
   stack: string[];
   overview: string[];
   diagram: DiagramData;
+  showcase?: Showcase | undefined;
   structure?: Structure | undefined;
   tools?: Tools | undefined;
   decisions: Decision[];

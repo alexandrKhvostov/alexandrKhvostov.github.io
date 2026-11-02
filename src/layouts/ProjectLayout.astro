@@ -5,6 +5,7 @@ import ProjectDecisions from "@/components/sections/ProjectDecisions.astro";
 import ProjectHeader from "@/components/sections/ProjectHeader.astro";
 import ProjectOverview from "@/components/sections/ProjectOverview.astro";
 import ProjectRules from "@/components/sections/ProjectRules.astro";
+import ProjectShowcase from "@/components/sections/ProjectShowcase.astro";
 import ProjectStructure from "@/components/sections/ProjectStructure.astro";
 import ProjectTools from "@/components/sections/ProjectTools.astro";
 import Button from "@/components/ui/Button.astro";
@@ -27,6 +28,7 @@ const hasConnections = outgoing.length + incoming.length > 0;
 const contents = [
   { id: "overview", label: "Overview" },
   { id: "architecture", label: "Architecture" },
+  ...(project.showcase ? [{ id: "showcase", label: project.showcase.title }] : []),
   ...(project.structure ? [{ id: "structure", label: "Code structure" }] : []),
   ...(project.tools ? [{ id: "tools", label: project.tools.title }] : []),
   { id: "decisions", label: "Decision log" },
@@ -57,6 +59,7 @@ const contents = [
       <ProjectHeader project={project} />
       <ProjectOverview paragraphs={project.overview} />
       <ProjectArchitecture diagram={project.diagram} />
+      {project.showcase && <ProjectShowcase showcase={project.showcase} />}
       {project.structure && <ProjectStructure structure={project.structure} />}
       {project.tools && <ProjectTools tools={project.tools} />}
       <ProjectDecisions items={project.decisions} />

@@ -4,21 +4,32 @@ interface Props {
   caption?: string;
   /** The running signal inside pauses while the frame is off screen. */
   signal?: boolean;
+  /** A slim frame for a phone screenshot: less padding, and it is not the container of a diagram. */
+  compact?: boolean;
+  /** `div` when the caption lives outside the frame and the figure wraps both. */
+  tag?: "figure" | "div";
   class?: string;
   [attr: string]: unknown;
 }
 
-const { caption, signal = false, class: className, ...rest } = Astro.props;
+const {
+  caption,
+  signal = false,
+  compact = false,
+  tag: Tag = "figure",
+  class: className,
+  ...rest
+} = Astro.props;
 ---
 
-<figure
+<Tag
   {...rest}
   data-signal-diagram={signal ? "" : undefined}
-  class:list={["screen-frame flex flex-col gap-4", className]}
+  class:list={["screen-frame flex flex-col gap-4", compact && "screen-frame-compact", className]}
 >
   <slot />
   {caption && <figcaption class="text-small text-muted">{caption}</figcaption>}
-</figure>
+</Tag>
 
 <style>
   /* The "screen": a gradient hairline from --signal to --signal-2 and the shot glow.
@@ -36,8 +47,14 @@ const { caption, signal = false, class: className, ...rest } = Astro.props;
     box-shadow: var(--glow-shot);
   }
 
+  /* Compact: a phone screenshot sits close to its border and is not a container. */
+  .screen-frame-compact {
+    --shot-padding: var(--space-2);
+    container-type: normal;
+  }
+
   @media (min-width: 640px) {
-    .screen-frame {
+    .screen-frame:not(.screen-frame-compact) {
       --shot-padding: var(--space-5);
     }
   }

@@ -5,6 +5,7 @@ import DiagramSteps from "@/components/blocks/DiagramSteps.astro";
 import GlanceStrip from "@/components/blocks/GlanceStrip.astro";
 import PipelineDiagram from "@/components/blocks/PipelineDiagram.astro";
 import ProjectRow from "@/components/blocks/ProjectRow.astro";
+import ShowcaseStrip from "@/components/blocks/ShowcaseStrip.astro";
 import RuleList from "@/components/blocks/RuleList.astro";
 import ToolList from "@/components/blocks/ToolList.astro";
 import ScreenFrame from "@/components/blocks/ScreenFrame.astro";
@@ -17,6 +18,7 @@ import ProjectHeader from "@/components/sections/ProjectHeader.astro";
 import ProjectList from "@/components/sections/ProjectList.astro";
 import ProjectOverview from "@/components/sections/ProjectOverview.astro";
 import ProjectRules from "@/components/sections/ProjectRules.astro";
+import ProjectShowcase from "@/components/sections/ProjectShowcase.astro";
 import ProjectStructure from "@/components/sections/ProjectStructure.astro";
 import ProjectTools from "@/components/sections/ProjectTools.astro";
 import Badge from "@/components/ui/Badge.astro";
@@ -24,6 +26,9 @@ import Chip from "@/components/ui/Chip.astro";
 import Button from "@/components/ui/Button.astro";
 import Link from "@/components/ui/Link.astro";
 import ThemeSwitch from "@/components/ui/ThemeSwitch.astro";
+import placeholder1 from "@/assets/lab/placeholder-1.png";
+import placeholder2 from "@/assets/lab/placeholder-2.png";
+import placeholder3 from "@/assets/lab/placeholder-3.png";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { incomingConnections, outgoingConnections } from "@/lib/connections";
 import {
@@ -32,6 +37,7 @@ import {
   pipelineFixture,
   rulesFixture,
   sequenceFixture,
+  showcaseFixture,
   structureFixture,
   toolsFixture,
 } from "@/lib/fixtures";
@@ -65,6 +71,13 @@ const chipStates = [
   { id: "focus", pressed: false, demo: "focus" },
   { id: "pressed", pressed: true, demo: undefined },
 ] as const;
+const placeholders = [placeholder1, placeholder2, placeholder3];
+const showcase = {
+  ...showcaseFixture,
+  screens: showcaseFixture.screens.map((screen, index) =>
+    Object.assign({ image: placeholders[index]! }, screen),
+  ),
+};
 const sampleProject = fixtureProjects[0]!;
 const outgoing = outgoingConnections(sampleProject.slug, fixtureProjects);
 const incoming = incomingConnections(sampleProject.slug, fixtureProjects);
@@ -447,6 +460,11 @@ const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
       </div>
 
       <div class="flex flex-col gap-3">
+        <h3 class="text-h3">Showcase strip (a row that scrolls inside itself, with snap)</h3>
+        <ShowcaseStrip screens={showcase.screens} />
+      </div>
+
+      <div class="flex flex-col gap-3">
         <h3 class="text-h3">Code block (always dark; a long line scrolls inside)</h3>
         <CodeBlock code={structureFixture.tree} label="Sample folder tree" />
         <CodeBlock
@@ -476,6 +494,7 @@ const entranceBlocks = ["Header", "Lead", "Diagram", "Rules"] as const;
       <ProjectHeader project={sampleProject} />
       <ProjectOverview paragraphs={sampleProject.overview} />
       <ProjectArchitecture diagram={sequenceFixture} idPrefix="lab-seq" />
+      <ProjectShowcase showcase={showcase} />
       <ProjectStructure structure={structureFixture} />
       <ProjectTools tools={toolsFixture} />
       <ProjectDecisions items={decisionsFixture} />

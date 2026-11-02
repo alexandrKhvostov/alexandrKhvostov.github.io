@@ -194,6 +194,7 @@ All states use semantic tokens. Focus is always a 2px `--signal` ring with 2px o
 - **Rule row:** rule (h3), why (muted), "held by" chips; when only a convention holds it, the chip says so.
 - **Decision log:** kind (decision, trade-off, planned next) with a small colored square, then title and reason.
 - **Code block:** always dark (`--code-bg`), `--radius-md`, Geist Mono; keys in `--signal`.
+- **Showcase strip:** phone screenshots in slim screen frames (`--radius-lg`, gradient hairline, `--glow-shot`) with the caption under each, in one row that scrolls inside itself with scroll-snap on every width (about 70% of the screen on phones so the next one peeks, 240px from 640px up); the scroller is focusable and labelled. Points follow as hairline rows, then an optional excerpt in the code block.
 - **Code structure:** the folder tree in a code block (always dark, scrolls inside itself on a narrow screen, never widens the page), then notes as a hairline-separated list: path in mono, the reason as body text.
 - **Tools list:** a group is an h3 with an optional note, then hairline-separated rows: name in mono, what it does beside it from 640px up and below it on phones. A list, not a grid of cards.
 - **Section anchor:** `#` beside each section heading, visible on hover and focus, copies a link to the section.
