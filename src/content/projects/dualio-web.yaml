@@ -5,14 +5,14 @@ order: 5
 role: Senior Full Stack Developer / Engineering Lead. Built and led the web funnel app.
 disciplines: [frontend]
 aiAgents: false
-summary: Web app for Dualio's ad funnel. It renders quiz and paywall configs from a CDN, takes payment and hands buyers to the mobile app.
+summary: Web app for Dualio's ad funnel, one of three PlayMe funnel apps built on the same structure and rules. It renders quiz and paywall configs from a CDN, takes payment and hands buyers to the mobile app.
 glance:
+  - value: "3"
+    label: funnel apps built on this structure and these rules
   - value: "2"
     label: pinned packages render the quiz and the paywall
   - value: "17"
     label: quiz step types a config can use
-  - value: "12,411"
-    label: lines deleted in the change that moved quiz and paywall into packages
   - value: about 40
     label: release commits in about 5.5 months
 stack:
@@ -30,7 +30,7 @@ stack:
   - AWS Amplify
   - Biome
 overview:
-  - Dualio is an AI photo and video app, and this funnel is built for paid ad traffic. A visitor lands on a quiz, answers a few questions, signs up with an email, sees a paywall, pays on the web and is sent to the app store. Marketers produce the quiz and the paywall as JSON configs, with an AI agent working through the quiz builder, so a new funnel needs no web release.
+  - Dualio is an AI photo and video app, and this funnel is built for paid ad traffic. A visitor lands on a quiz, answers a few questions, signs up with an email, sees a paywall, pays on the web and is sent to the app store. Marketers produce the quiz and the paywall as JSON configs, with an AI agent working through the quiz builder, so a new funnel needs no web release. PlayMe built three funnel apps this way, with the same layers, packages and agent rules; this page uses Dualio as the example. The site's home page is only a thin entry point; the work in this app is the funnel itself (the quiz, the paywall, checkout and onboarding).
   - The app is a thin host. It loads a config from a CDN folder per environment, validates it with the Zod schemas of the quiz and paywall packages, and hands the packages their data provider, analytics, sign-in and navigation. The packages draw every step. The app supplies the backend calls and the tracking.
   - The packages come from the quiz library, and the configs are the same config files the quiz builder saves. After payment, onboarding offers an upsell and then opens the app store through an AppsFlyer link. The link carries the sale's transaction id, so the Dualio app can tie the new user to the web sale in analytics. The repo also holds a small signed-in app for videos, avatars and subscriptions.
 diagram:
@@ -207,5 +207,5 @@ connections:
   - to: dualio-app
     label: hands buyers over to the
 links:
-  - label: Dualio
-    url: https://dualio.ai
+  - label: Open a live funnel
+    url: https://dualio.ai/quiz/flow5gl
