@@ -1,0 +1,216 @@
+title: Waste management platform
+company: sysgears
+period: "2025"
+order: 3
+role: "Full-stack developer in the SysGears team: owned the invoice management module and the customer dashboard, built the tendering page and steps of the operator quote flow."
+disciplines: [fullstack]
+aiAgents: false
+summary: "Next.js and Supabase platform where operators' e-invoices turn into waste volumes, costs and CO2 per location, and customers and operators meet in pooled tenders."
+glance:
+  - value: "31"
+    label: merged pull requests across invoices, dashboard, tendering and quotes
+  - value: "2"
+    label: modules owned, invoice management and the customer dashboard
+stack:
+  - TypeScript
+  - Next.js
+  - React
+  - Tailwind CSS
+  - shadcn/ui
+  - TanStack Query
+  - TanStack Table
+  - Zustand
+  - next-intl
+  - Supabase
+  - PostgreSQL
+  - AWS S3
+  - Google Gemini
+overview:
+  - The platform serves three groups of users. They are its own staff, customers, and the waste operators that serve those customers. Operators bill customers through e-invoicing. The system pulls those invoices in, a pipeline classifies each invoice row into a waste fraction and an expense type, and an LLM reads invoices that arrive only as PDF. The result becomes weights, costs, emptying rates and CO2 figures per location. Customers also keep a register of their locations.
+  - The platform also runs pooled tenders. Staff open a tender for a quarter, customers sign up their locations and expected waste amounts, operators answer with a quote per region, and customers see the results.
+  - This page covers the screens and queries built on top of that data. The main piece is the invoice management module, which makes machine-classified invoices reviewable. Staff and customers see every invoice with its rows, admins see how many rows per invoice the classifier could not place, and a fix opens either as a dialog on one cell or as an inline editor beside the original PDF. Around it sit the customer dashboard, the tendering page, and steps of the operator quote flow and the pool tendering sign-up.
+  - The app is a Next.js App Router project with thin pages and one folder per feature module. Data hooks built on TanStack Query call Supabase from the browser, and a few route handlers run the work that needs server secrets, such as signing links to private PDFs.
+diagram:
+  type: sequence
+  caption: How a customer or an admin reviews and fixes a classified invoice row next to its PDF.
+  nodes:
+    - id: user
+      label: Customer or admin
+    - id: page
+      label: Invoices page
+    - id: fn
+      label: Postgres function
+    - id: rows
+      label: Row classification
+    - id: editor
+      label: Fix dialog and inline editor
+    - id: route
+      label: Signed link route
+    - id: s3
+      label: S3
+  steps:
+    - from: user
+      to: page
+      label: Open invoices
+      note: The same table component renders a customer column set or an admin column set, chosen by one prop, so each role sees only the columns that matter to it.
+    - from: page
+      to: fn
+      label: Ask for a page
+      note: The query hook sends the page number, the search text and the user's location ids to one Postgres function. The ids limit the page to the locations the user may see.
+    - from: fn
+      to: page
+      label: Page, rows and count
+      note: One call returns the invoices and the total count as one JSON value, with the location, the raw invoice and the rows nested inside, each row with its mapping and fraction option. Search matches the invoice number or the location name, so page, count and search need one round trip.
+    - from: page
+      to: rows
+      label: Resolve each row
+      note: A row has three possible sources for its waste type and expense type. The table takes the manual override first, then the shared mapping rule, then the value computed by preprocessing. A row with a context-dependent fraction shows the fraction derived from neighbouring rows, with an icon.
+    - from: rows
+      to: page
+      label: Count unclassified rows
+      note: In the admin column set, an errors column counts the rows of each invoice whose waste type or expense type is missing or unknown, so an admin sees which invoices need attention without opening them.
+    - from: user
+      to: editor
+      label: Click a cell
+      note: A click on the waste type or expense type cell opens a dialog for that one cell, the quick path for a single wrong classification.
+    - from: user
+      to: editor
+      label: Click a row
+      note: A click on the row expands an inline edit form with the invoice PDF beside it, so the numbers can be checked against the original document. The sticky row header stays in view while a long invoice scrolls.
+    - from: editor
+      to: route
+      label: Ask for the PDF
+      note: The client first checks that the stored s3 address is valid, then asks the signed link route for the invoice's PDF, with a flag for preview or download.
+    - from: route
+      to: s3
+      label: List and sign
+      note: The route lists the invoice's folder, picks the PDF and signs a GET link valid for one hour.
+    - from: route
+      to: editor
+      label: Signed link
+      note: The PDF viewer opens the link inline for preview. For download the link is signed as an attachment.
+    - from: editor
+      to: rows
+      label: Save the fix
+      note: A change to the classification updates the shared mapping rule, and a change to total, tax, quantity or unit updates the row itself. The table then shows the new value from the same precedence.
+structure:
+  tree: |
+    src/
+      app/                       thin pages, one per route; api/ holds route handlers
+      modules/
+        invoices-management/     invoice and rows tables, fix dialogs, inline editor, store
+        dashboard/               customer dashboard: carousel and four blocks
+        tendering/               tenders table, attend dialog, tender queries
+        quote/                   operator quote wizard and the Quotes page
+        tendering-signup/        pool tendering sign-up wizard
+      components/molecules/      shared search, radio and checkbox groups
+      hooks/queries/             TanStack Query hooks over Supabase
+      lib/i18n/                  next-intl setup
+    supabase/migrations/         Postgres functions, including the paginated invoice list
+  notes:
+    - path: modules/invoices-management
+      why: Components often keep their logic in a useLogic hook beside the view, so the table renders and its hook decides which columns, sources and alerts apply. Pagination and search live in a Zustand store, and the tables read from it. The alert count and the row ordering are plain utilities.
+    - path: modules/dashboard
+      why: Every block is a self-contained component with its own skeleton, and a reusable carousel arranges them.
+    - path: modules/tendering
+      why: The tenders table and the attend dialog use three queries, for active, available and attended tenders, so each list reads one question from the database.
+    - path: modules/quote and tendering-signup
+      why: Both are wizards with one folder per step. The fraction steps of the quote flow share hooks that take the step as a parameter, so two steps that ask a similar question do not duplicate logic.
+    - path: components/molecules
+      why: Search, nested radio groups and grouped checkbox lists moved here once a second module needed them. The search first lived in the locations module and was reused for invoices.
+    - path: hooks/queries
+      why: The browser reads Supabase through these hooks, one per question. A page asks for data by hook and does not know how the query is built.
+    - path: app/api
+      why: The routes exist for work that needs server secrets. The invoice PDF route sits here and signs short-lived links to the files in S3.
+    - path: supabase/migrations
+      why: The paginated invoice list is a Postgres function, so the page, the nested rows, the count and the search come from the database in one call.
+tools:
+  title: What I built
+  intro: The screens, queries and shared pieces behind the invoice review flow, the customer dashboard, the tendering page and the quote and sign-up steps.
+  groups:
+    - title: Invoice management
+      note: The module in src/modules/invoices-management, extended later by the team.
+      items:
+        - name: Invoices table
+          does: One table with a customer column set and an admin column set, chosen by a prop. It supports pagination, search and a time-period column.
+        - name: Error count
+          does: In the admin view, counts per invoice the rows whose waste type or expense type is missing or unknown.
+        - name: Invoice drawer and rows table
+          does: Opens an invoice's rows, orders them and shows each row's fraction from the most specific source. Synthetic waste amount rows appear indented under their row and cannot be clicked.
+        - name: Fix dialog
+          does: A click on the waste type or expense type cell opens a dialog that fixes that one cell.
+        - name: Inline row editor
+          does: A click on a row expands a form with the original PDF beside it, for checking and correcting the row's classification and numbers.
+        - name: Sticky row header
+          does: Keeps the column header of the rows table in view while a long invoice scrolls, using an IntersectionObserver hook.
+    - title: Data and files
+      items:
+        - name: Paginated invoice function
+          does: A Postgres function that returns one page of invoices with nested rows, mappings and the total count, and searches by invoice number or location name.
+        - name: Multi-tenant update
+          does: Updates the function for platform staff, who work across several tenants, so it takes a list of tenant ids.
+        - name: PDF preview and download
+          does: A route handler lists the invoice's S3 folder and returns a one-hour signed link, inline for preview or as an attachment for download. A PDF viewer and a preview dialog show it.
+    - title: Customer dashboard
+      items:
+        - name: Layout and carousel
+          does: The dashboard scaffolding, a reusable carousel and a skeleton for each block.
+        - name: Pool tendering sign-up block
+          does: The dashboard block for the pool tendering sign-up.
+        - name: Key figures block
+          does: Shows the main figures of the previous business month, matching the billing period.
+        - name: Locations block
+          does: The dashboard block for the customer's locations.
+        - name: Invoices block
+          does: The dashboard block for the customer's invoices.
+    - title: Tendering page
+      items:
+        - name: Tenders table
+          does: Lists the tenders on the page.
+        - name: Attend dialog
+          does: The dialog for attending a tender.
+        - name: Tender queries
+          does: Three queries for active, available and attended tenders.
+    - title: Quote flow and sign-up
+      items:
+        - name: Operator quote screens
+          does: The welcome, prices welcome, contact info and thank-you screens, with a shared step wrapper.
+        - name: Fraction steps
+          does: The steps for which fractions an operator processes and which it empties, with sub-fractions. Both pairs share the same hooks.
+        - name: Service steps
+          does: The emptyings amount step and first versions of the bin-related and cleaning services steps.
+        - name: Quotes page
+          does: The operators' list of their quotes, with role constants and a helper that decides which sidebar entries a role can open.
+        - name: Pool tendering sign-up steps
+          does: The rental bins and biowaste bags steps of the customer sign-up.
+    - title: Shared pieces
+      items:
+        - name: Search
+          does: A search input moved out of the locations module and reused for invoices.
+        - name: Radio and checkbox groups
+          does: Radio groups, including a nested one for parent and sub-fractions, a checkbox list and a grouped checkbox list.
+        - name: Fraction grouping
+          does: A single-pass function that groups sub-fractions under their parent and keeps children seen before their parent until the parent arrives.
+        - name: next-intl foundation
+          does: Translations without locale routing. The language is stored in a cookie with a default, and a client helper sets the cookie and reloads.
+decisions:
+  - kind: decision
+    title: One Postgres function returns the invoice page, its nested rows and the count
+    why: The invoice list needs search across the invoice number and the name of a related location, a total count and the rows of each invoice. A Postgres function returns all of it as one JSON value in one round trip, and the search runs inside it through EXISTS. A later update lets staff who work across several tenants pass a list of tenant ids.
+  - kind: decision
+    title: A row shows its fraction from the most specific source
+    why: A row can carry a manual override, match a shared mapping rule, or have a value computed from the rows around it. The table takes them in that order, so a manual fix wins over a rule, and a rule wins over a computed value. Rows with a context-dependent fraction show the computed value with an icon, so a reader can tell it was derived.
+  - kind: decision
+    title: A cell click opens a dialog, a row click opens an editor beside the PDF
+    why: Most fixes are one wrong waste type or expense type, and a small dialog on that cell is the fastest way to change it. When the numbers themselves need checking, the row expands into a form with the original PDF beside it, so the reviewer compares the form and the document without leaving the page.
+  - kind: decision
+    title: A server route signs short-lived links to invoice PDFs
+    why: Invoice PDFs stay private in S3. The route lists the invoice's folder, picks the PDF and returns a link signed for one hour, inline for preview or as an attachment for download. The client checks the stored S3 address before it asks.
+  - kind: decision
+    title: Dashboard key figures use the previous business month
+    why: The block first showed the last 30 days, while billing runs from the 26th to the 25th, so its figures did not match the report. A small helper returns the previous business month, so the block shows the same period as the invoices.
+  - kind: decision
+    title: Quote steps share hooks that take the step as a parameter
+    why: The steps for which fractions an operator processes and which it empties ask nearly the same question. One pair of hooks, one for fractions and one for sub-fractions, serves both steps, and sub-fraction options come from a grouping function that handles children arriving before their parent.
+connections: []
+links: []

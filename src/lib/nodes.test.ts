@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { isNodeId, isProjectNode, nodeInfo, nodeLabel, nodes } from "./nodes.ts";
 
-test("registry holds thirteen project nodes and five map-only nodes", () => {
+test("registry holds fifteen project nodes and five map-only nodes", () => {
   const kinds = Object.values(nodes).map((node) => node.kind);
-  assert.equal(kinds.filter((kind) => kind === "project").length, 13);
+  assert.equal(kinds.filter((kind) => kind === "project").length, 15);
   assert.equal(kinds.filter((kind) => kind !== "project").length, 5);
 });
 
