@@ -103,7 +103,7 @@ src/styles/
 | `--signal-glow`                            | glow color, never text                                                 | cyan-400                              | cyan-500               |
 | `--code-bg` / `--code-ink`                 | code blocks (always dark)                                              | night-900 / mist-50                   | slate-950 / mist-50    |
 | `--code-key`                               | keys and highlights inside code                                        | cyan-400                              | cyan-400               |
-| `--company-playme` / `-sysgears` / `-side`    | one color per company line on the projects page and in project headers | cyan / teal / amber, tuned in the lab | same, darker for light |
+| `--company-playme` / `-sysgears` / `-side` | one color per company line on the projects page and in project headers | cyan / teal / amber, tuned in the lab | same, darker for light |
 | `--kind-decision` / `-trade-off` / `-next` | the small square before each entry of a decision log                   | cyan / amber / violet                 | same, darker for light |
 
 Use of color:
