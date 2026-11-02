@@ -172,6 +172,7 @@ Prose width 68ch. Weights in use: 400, 600, 700. Labels are sentence case; no up
 | `--dur-press`   | 120ms                            | a control sinking on press           |
 | `--dur-move`    | 250ms                            | a note or list opening, rows gliding |
 | `--dur-theme`   | 450ms                            | the theme circle from its switch     |
+| `--dur-trace`   | 900ms                            | one run of the signal around a row   |
 | `--ease-press`  | cubic-bezier(.25, .46, .45, .94) | press feedback                       |
 | `--ease-move`   | cubic-bezier(.25, 1, .5, 1)      | opening, sliding, gliding            |
 | `--ease-enter`  | cubic-bezier(.22, 1, .36, 1)     | the theme circle, the Copied label   |
@@ -181,7 +182,7 @@ Prose width 68ch. Weights in use: 400, 600, 700. Labels are sentence case; no up
 - **Entrance, once per page:** the header and the first screen of blocks fade and rise in sequence (`--stagger`). Lower sections appear once when scrolled into view. Nothing re-animates on scroll back.
 - **Signal:** on diagrams, a light runs along each active edge from source to target, showing the direction of data. It pauses when the diagram is off screen.
 - **Ambient glow:** one blurred glow drifts slowly in the page corner (9s, alternate). One per page.
-- **Answers to actions:** selecting a diagram step lights its message and node and opens its note while the last one closes; hovering a project row lifts its border to `--signal-2` with a soft glow. Buttons, chips, steps and toggles use the `pressable` utility and sink to `--press-scale` on press (a wide step button only to 0.99). "Show all" opens the rest of a list to its height. Copying a section link turns `#` into a check with "Copied" beside it.
+- **Answers to actions:** selecting a diagram step lights its message and node and opens its note while the last one closes; hovering or focusing a project row lights its border as a `--signal` → `--signal-2` ring whose bright point runs once around the row, with a soft glow. Buttons, chips, steps and toggles use the `pressable` utility and sink to `--press-scale` on press (a wide step button only to 0.99). "Show all" opens the rest of a list to its height. Copying a section link turns `#` into a check with "Copied" beside it.
 - **View transitions in the page:** filtering the list glides the remaining rows to their places; switching the theme reveals the new one as a circle from the switch. Both run only where the browser supports them and motion is not reduced (`scripts/view-transition.ts`).
 - **Left out on purpose:** counting-up glance numbers (the header already has its entrance), lifting rows on hover (hovered too often), parallax, motion in the top bar or the contents column.
 - `prefers-reduced-motion: reduce` sets durations to 0, stops the signal and the ambient drift, and shows everything in place.
@@ -192,10 +193,11 @@ Prose width 68ch. Weights in use: 400, 600, 700. Labels are sentence case; no up
 
 All states use semantic tokens. Focus is always a 2px `--signal` ring with 2px offset.
 
-- **Top bar (every page):** name and role on the left, "All projects", theme switch and "Contact" on the right (Contact only once `contactUrl` in `lib/site.ts` is set); 64px high, sticky, `--bg` with a bottom hairline. A project page must make sense to someone who arrived by a shared link.
+- **Top bar (every page):** name and role on the left (role hidden on phones), "All projects", "Contact" and the theme switch on the right, one even gap between them (12px on phones, 24px from 640px up); the switch is a pill with its label, and on phones an icon-only circle as tall as the links. 56px high, sticky, `--bg` with a bottom hairline. A project page must make sense to someone who arrived by a shared link.
 - **Button, primary:** `--ink` fill with `--bg` text. **Secondary:** transparent, 1px `--line-strong`. **Quiet:** text only.
 - **Filter chip:** pill, 1px `--line`; pressed = `--ink` fill. The chosen filter is written to the URL (`?f=backend`).
-- **Project row:** `--surface-1`, hairline, `--radius-md`; the whole row is one link; title, period, one sentence, role, discipline chips and the AI agents badge; a 4px left edge in the company color. Hover: border `--signal-2` and a soft glow.
+- **Project list:** rows grouped by company under a heading with the company dot; one column on phones, two from 768px up, rows in a line share their height and keep chips and arrow on the bottom edge.
+- **Project row:** `--surface-1`, hairline, `--radius-md`; the whole row is one link; title, period, one sentence, role, discipline chips and the AI agents badge. The company color lives in the dot of the group heading, not on the row. An arrow → at the end of the chips line says the row opens, since touch has no hover to say it; it turns `--signal` and moves 4px on hover, focus and press. A press sinks the row to 0.99 and lights the ring at once (iOS needs a passive `touchstart` listener for `:active`). Hover (real hover only) and keyboard focus: a conic gradient ring over the hairline, its bright point running once around the row over `--dur-trace`, then lit with `--glow-row`; reduced motion shows the ring without the run.
 - **Stack chip:** Geist Mono, `--surface-1`, 1px `--line`, `--radius-sm`.
 - **Screen frame:** the main diagram or screenshot of a project sits in a `--radius-lg` frame with a 1px gradient border (`--signal` → transparent → `--signal-2`) and `--glow-shot`.
 - **Diagram node:** `--surface-2`, 1px `--line-strong`; active = `--signal` border, text and `--glow-node`. **Edge:** 2px, the muted text color softened (hairline tokens are too faint to carry meaning), numbered with a step badge; the active edge turns `--signal` and carries the running signal.
