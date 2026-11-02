@@ -92,4 +92,4 @@ Page-to-page navigation uses native cross-document view transitions (`@view-tran
 
 ## Deployment
 
-`astro build` produces `dist/`; a GitHub Actions workflow publishes it to GitHub Pages on push to `main`.
+`astro build` produces `dist/`. The repository is `alexandrKhvostov.github.io` in the `alexandrKhvostov` organization (GitHub serves `<owner>.github.io` only from a repo named after its owner), so Pages serves it at the domain root and `astro.config.mjs` needs no `base`. `.github/workflows/site.yml` runs `pnpm check` on every pull request and push to `main`; a push to `main` then uploads `dist/` and deploys it to GitHub Pages (Settings → Pages → Source: GitHub Actions). The GitHub profile README lives in the separate `alexanderKhvostov/alexanderKhvostov` repository and links here.

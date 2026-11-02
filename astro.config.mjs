@@ -11,9 +11,9 @@ const labDevOnly = {
   },
 };
 
-// Served from the root of the user-site repo `alexanderKhvostov.github.io`, so no `base`.
+// Served from the root of the site repo `alexandrKhvostov/alexandrKhvostov.github.io`, so no `base`.
 export default defineConfig({
-  site: "https://alexanderkhvostov.github.io",
+  site: "https://alexandrkhvostov.github.io",
   output: "static",
   integrations: [labDevOnly],
   vite: {
