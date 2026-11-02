@@ -13,7 +13,7 @@ src/
     blocks/       DecisionCard, StepTimeline, CodeBlock, FactStrip, SystemMap
     sections/     CaseHeader, CaseBody, CaseNext, composed from blocks
   layouts/        BaseLayout (head, nav, theme bootstrap), CaseLayout
-  pages/          index, cases/[slug], lab (dev only)
+  pages/          index (all projects), [slug] (one project), lab (dev only)
   scripts/        client-side behaviour: reveal on scroll, theme switch, map interaction
   styles/         tokens, themes, tailwind.css, fonts.css (see DESIGN.md)
 ```
@@ -34,7 +34,7 @@ pages → layouts → sections → blocks → ui
 
 ## Content model
 
-One collection, `cases`, one YAML file per case in `src/content/cases/`. The schema in `src/content.config.ts` is the source of truth for fields; in short, a case has:
+One collection, `projects`, one YAML file per project in `src/content/projects/`. The schema in `src/content.config.ts` is the source of truth for fields; in short, a case has:
 
 - identity: `slug`, `title`, `company`, `period`, `tone` (one of the four DESIGN.md tones), `order`;
 - `role`: the agreed wording;
@@ -42,7 +42,7 @@ One collection, `cases`, one YAML file per case in `src/content/cases/`. The sch
 - `flow`: ordered steps (title, note) rendered as a timeline;
 - `decisions`: title, why, and a kind (decision, trade-off, risk, next);
 - `next`: what would come next;
-- `connections`: slugs of other cases or map-only nodes, with a label for the edge;
+- `connections`: slugs of other projects or map-only nodes, with a label for the edge;
 - optional `links` (public product URLs only).
 
 The build fails when a field is missing or a connection points to a node that does not exist.
@@ -53,8 +53,8 @@ The build fails when a field is missing or a connection points to a node that do
 
 ## Pages
 
-- `/`: hero, system map, case cards ordered by `order`, the pet project section.
-- `/cases/[slug]`: one page per case from `CaseLayout`.
+- `/`: all projects, grouped by company, with discipline filters written to the URL (`?f=backend`).
+- `/[slug]`: one page per project from `ProjectLayout`, at a short root URL meant to be shared on its own (`/auth-service`).
 - `/lab`: every token and component in every state, a theme switcher and live token inputs. Never linked. The file is `src/pages/_lab.astro` (the underscore keeps the router from building it) and a small integration in `astro.config.mjs` injects the `/lab` route only under `astro dev`, so a build contains neither the page nor its script.
 
 Page-to-page navigation uses Astro View Transitions, so a case card morphs into the case header.
