@@ -94,8 +94,8 @@ const current = Astro.url.pathname === homePath ? "page" : undefined;
     <div class="ambient-clip" aria-hidden="true">
       <span class="ambient-glow" data-ambient></span>
     </div>
-    <header class="topbar sticky top-0 z-10 border-b border-line bg-bg">
-      <div class="mx-auto flex h-full w-full max-w-page items-center justify-between gap-4 px-gutter">
+    <header class="topbar sticky top-0 z-10 flex border-b border-line bg-bg">
+      <div class="mx-auto flex w-full max-w-page items-center justify-between gap-3 px-gutter sm:gap-5">
         <a href={homePath} class="flex min-w-0 flex-col text-ink no-underline">
           <span class="font-medium whitespace-nowrap">{siteName}</span>
           <!-- On phones the role would wrap the sticky bar to four lines; the hero and footer carry it there. -->

@@ -33,7 +33,7 @@ const { project, ...rest } = Astro.props;
   </div>
   <p class="max-w-prose text-small text-muted">{project.summary}</p>
   <p class="text-small text-muted">{project.role}</p>
-  <div class="mt-1 flex items-center justify-between gap-3">
+  <div class="mt-auto flex items-center justify-between gap-3 pt-1">
     <ul class="flex flex-wrap gap-2" aria-label="Disciplines">
       {project.disciplines.map((discipline) => (
         <li>

@@ -193,9 +193,10 @@ Prose width 68ch. Weights in use: 400, 600, 700. Labels are sentence case; no up
 
 All states use semantic tokens. Focus is always a 2px `--signal` ring with 2px offset.
 
-- **Top bar (every page):** name and role on the left, "All projects", theme switch and "Contact" on the right (Contact only once `contactUrl` in `lib/site.ts` is set); 64px high, sticky, `--bg` with a bottom hairline. A project page must make sense to someone who arrived by a shared link.
+- **Top bar (every page):** name and role on the left (role hidden on phones), "All projects", "Contact" and the theme switch on the right, one even gap between them (12px on phones, 24px from 640px up); the switch is a pill with its label, and on phones an icon-only circle as tall as the links. 56px high, sticky, `--bg` with a bottom hairline. A project page must make sense to someone who arrived by a shared link.
 - **Button, primary:** `--ink` fill with `--bg` text. **Secondary:** transparent, 1px `--line-strong`. **Quiet:** text only.
 - **Filter chip:** pill, 1px `--line`; pressed = `--ink` fill. The chosen filter is written to the URL (`?f=backend`).
+- **Project list:** rows grouped by company under a heading with the company dot; one column on phones, two from 768px up, rows in a line share their height and keep chips and arrow on the bottom edge.
 - **Project row:** `--surface-1`, hairline, `--radius-md`; the whole row is one link; title, period, one sentence, role, discipline chips and the AI agents badge. The company color lives in the dot of the group heading, not on the row. An arrow → at the end of the chips line says the row opens, since touch has no hover to say it; it turns `--signal` and moves 4px on hover, focus and press. A press sinks the row to 0.99 and lights the ring at once (iOS needs a passive `touchstart` listener for `:active`). Hover (real hover only) and keyboard focus: a conic gradient ring over the hairline, its bright point running once around the row over `--dur-trace`, then lit with `--glow-row`; reduced motion shows the ring without the run.
 - **Stack chip:** Geist Mono, `--surface-1`, 1px `--line`, `--radius-sm`.
 - **Screen frame:** the main diagram or screenshot of a project sits in a `--radius-lg` frame with a 1px gradient border (`--signal` → transparent → `--signal-2`) and `--glow-shot`.

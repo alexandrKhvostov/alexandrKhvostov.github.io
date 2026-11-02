@@ -13,7 +13,8 @@ const { class: className, ...rest } = Astro.props;
   {...rest}
   aria-label="Switch theme"
   class:list={[
-    "inline-flex items-center gap-2 rounded-pill border border-line-strong px-3 py-1 font-mono text-mono text-ink pressable hover:bg-surface-2 active:bg-line",
+    // On phones only the icon shows, so the pill closes into a circle as tall as the nav links.
+    "inline-flex items-center justify-center gap-2 rounded-pill border border-line-strong px-3 py-1 font-mono text-mono text-ink pressable hover:bg-surface-2 active:bg-line max-sm:p-1",
     className,
   ]}
 >
