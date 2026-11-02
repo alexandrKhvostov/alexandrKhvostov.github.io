@@ -7,12 +7,12 @@ disciplines: [frontend]
 aiAgents: false
 summary: Private React libraries that render quiz funnels and paywalls from validated JSON configs, so a funnel changes without a library release.
 glance:
+  - value: "4"
+    label: repositories built on it
   - value: "17"
     label: quiz step types
   - value: "15"
     label: paywall section types
-  - value: "0"
-    label: library releases to change a funnel
   - value: "4"
     label: published packages
 stack:
