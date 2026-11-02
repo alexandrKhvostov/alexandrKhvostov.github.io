@@ -1,0 +1,188 @@
+title: Media storage MCP
+company: playme
+period: "2026"
+order: 3
+role: Senior Full Stack Developer / Engineering Lead. Designed and built the server.
+disciplines: [backend]
+aiAgents: true
+summary: MCP server that lets an AI agent upload, optimize and list images and video on PlayMe's CDN, from a URL or from the agent's sandbox.
+glance:
+  - value: "8"
+    label: MCP tools
+  - value: "128"
+    label: test cases in 14 files
+  - value: "20"
+    label: files per upload call
+  - value: 150 MiB
+    label: video size limit
+stack:
+  - TypeScript
+  - Node.js 24
+  - Express 5
+  - MCP SDK
+  - Zod
+  - jose
+  - AWS S3
+  - CloudFront
+  - sharp
+  - ffmpeg
+  - Docker
+  - Helm
+overview:
+  - PlayMe's products need permanent CDN URLs for images, video and other media, with consistent names and web-friendly encoding. Done by hand, that means ffmpeg, S3 and a CloudFront invalidation. This server lets people who are not developers ask an AI agent such as Claude to upload, optimize, list and look up files in plain language. Overwriting needs an explicit force flag.
+  - A file arrives either as a public URL or, when it exists only in the agent's sandbox, through a three-call local upload. Both paths end in one pipeline. Raster images are resized to fit 1920 by 1920 pixels and converted to WebP, SVG, PDF and audio pass through, and video that is already MP4 gets a lossless faststart fix when it needs one, or an opt-in transcode with renditions and a poster.
+  - The server keeps no session in memory and runs 2 to 3 replicas in production, so the state of a local upload lives in S3. It verifies tokens from the auth service. The MCP template was first developed in this repo, and its reusable part is the core layer.
+diagram:
+  type: sequence
+  caption: The local-file upload, where three calls from the agent share their state through an S3 manifest instead of server memory.
+  nodes:
+    - id: client
+      label: AI client
+    - id: mcp
+      label: MCP server
+    - id: s3
+      label: S3
+    - id: cf
+      label: CloudFront
+  steps:
+    - from: client
+      to: mcp
+      label: create_upload
+      note: The call passes MCP auth. The server checks the project, filename, content type, exact size and options, then returns an upload URL and a signed token bound to the upload id, type and size, valid for 10 minutes by default.
+    - from: mcp
+      to: s3
+      label: Write pending manifest
+      note: The manifest goes under a staging prefix with a write-if-absent condition. It is the only record of the session.
+    - from: client
+      to: mcp
+      label: PUT the bytes
+      note: This request skips MCP auth and carries the upload token in the Authorization header, which keeps it out of access logs. Before any byte is stored, the server checks the token, the manifest state, the content type and the Content-Length.
+    - from: mcp
+      to: s3
+      label: Stage the source
+      note: The body streams straight to S3 while a counter fails on overflow or a short body. A write-if-absent condition means a replayed PUT cannot overwrite the staged file.
+    - from: client
+      to: mcp
+      label: complete_upload
+      note: Any pod can receive this call. It checks that the staged source exists and matches the manifest before claiming anything.
+    - from: mcp
+      to: s3
+      label: Claim the manifest
+      note: A conditional write on the manifest's ETag sets processing with a fresh attempt id. A pod that loses the race rereads and reports processing or the saved receipt.
+    - from: mcp
+      to: s3
+      label: Process and publish
+      note: The shared pipeline reads the staged source and writes the final assets. An existing file is not overwritten without force.
+    - from: mcp
+      to: cf
+      label: Invalidate overwritten keys
+      note: The cache is refreshed only when a file was overwritten. A failed invalidation is logged and reported but does not fail the upload.
+    - from: mcp
+      to: s3
+      label: Write receipt, delete source
+      note: The receipt is written before the staged source is deleted, then the agent gets the CDN URLs. If processing failed, the claim goes back to pending so the agent can retry.
+structure:
+  tree: |
+    src/index.ts                composition root: env, S3 client, auth, server
+    src/core/server.ts          Express app, /health, /mcp, route hook
+    src/core/auth/              shared-secret and JWT strategies
+    src/core/utils/             error and naming wrappers for tools
+    src/domain/s3-client.ts     S3 reads and writes, CloudFront invalidation
+    src/domain/utils/           URL safety check and shared helpers
+    src/domain/context/         limits, guides and server instructions
+    src/domain/tools/           one folder or file per tool
+    src/domain/tools/upload-files/   shared pipeline, video processing
+    src/domain/local-upload/    token, routes, upload state machine
+    k8s/ and Dockerfile         Helm chart and image
+    manifest.json               Claude Desktop extension wrapper
+  notes:
+    - path: src/core/ and src/domain/
+      why: Core is the MCP plumbing that other servers reuse, and AGENTS.md says not to edit it per project. Domain holds everything about S3, the CDN and media. Domain adds HTTP routes through one hook that core calls after auth and /health but before /mcp.
+    - path: src/domain/context/
+      why: One capabilities object holds every limit and default. Tool schemas, descriptions, the guides and get_capabilities all read from it, so the text the agent sees stays in step with what the code enforces.
+    - path: src/domain/tools/upload-files/
+      why: The URL path and the local-upload path each resolve their own transport, then hand the pipeline the same source description. A test asserts that both produce the same WebP and the same MP4.
+    - path: src/domain/local-upload/
+      why: The upload state machine, the token and the PUT route live here, so core knows nothing about uploads. With no signing secret set, the two upload tools and the route are never registered.
+tools:
+  title: Tools
+  intro: 8 MCP tools. Every tool name carries a server prefix. create_upload and complete_upload exist only when the upload signing secret is configured.
+  groups:
+    - title: Guidance
+      note: The server also offers one prompt, upload_media, and passes instructions to the client on connect.
+      items:
+        - name: get_guide
+          does: Returns usage guidance by section, which keeps every tool description short.
+        - name: get_capabilities
+          does: Returns the limits and defaults, such as size caps and supported types, from the same source the tool schemas use.
+    - title: Uploading
+      items:
+        - name: upload_files
+          does: Takes up to 20 public URLs, including Google Drive share links, and processes them in batches of 5. One failure does not fail the call. It refuses to overwrite an existing file unless force is set.
+        - name: create_upload
+          does: Starts the upload of a file that exists only in the agent's sandbox. It checks the request, writes a pending manifest and returns a PUT URL with a short-lived token.
+        - name: complete_upload
+          does: Claims the upload, runs it through the pipeline and returns the result. A repeated call returns the saved receipt, and a call during processing returns a processing status.
+    - title: Browsing
+      items:
+        - name: list_folders
+          does: Lists the folders in the media storage. The reserved staging folder is hidden.
+        - name: list_files
+          does: Lists the files in a folder.
+        - name: get_file_url
+          does: Returns the CDN URL of a file.
+decisions:
+  - kind: decision
+    title: Upload state in an S3 manifest, not in memory
+    why: The PUT, the complete_upload call and any retry can land on different pods behind the load balancer. S3 conditional writes give compare-and-swap on the manifest, so no Redis, database or sticky sessions are needed. A lifecycle rule on the staging prefix removes abandoned sessions after a day. Tests cover the races, including two service instances sharing one store and never running two processors.
+  - kind: decision
+    title: A separate short-lived token for the PUT
+    why: The PUT is a plain HTTP request from the agent's sandbox, outside MCP, so it carries its own HS256 token with issuer, audience, upload id, type and size. The token is bound to the upload, travels in a header and is issued only by a call that passed MCP auth.
+  - kind: decision
+    title: Check the agent can send the file first
+    why: Local upload needs the agent to send raw bytes with an HTTP PUT, which an agent with only MCP access cannot do. The server instructions, the create_upload description, the guide and the upload prompt all tell the agent to confirm first that it can read the file and send a PUT. If it cannot, it explains the blocker without creating a session and asks for a reachable file or a public URL.
+  - kind: decision
+    title: Video passes through unless asked
+    why: Transcoding is lossy and uses a lot of CPU. By default an MP4 gets a lossless remux with faststart, and only if its moov box sits after the media data. A transcode with renditions and a poster is opt-in. The ffmpeg jobs share one slot per pod with a 5 minute queue wait, because the pod has a CPU limit of about one core.
+  - kind: decision
+    title: The server teaches the agent how to use it
+    why: Limits live in one capabilities object, descriptions stay short, and details come from get_guide sections. The descriptions also tell the agent to ask the person before choosing lossy options or overwriting a file.
+  - kind: next
+    title: A delete tool
+    why: A draft exists and was not released. It previews by default and deletes only exact named files after a typed confirmation.
+rules:
+  items:
+    - rule: A bad or partial configuration stops the server at startup
+      why: A misconfigured pod never starts, so the error does not surface on each request. The optional upload feature resolves once at boot, and an incomplete combination throws.
+      heldBy:
+        - Zod env schema
+        - startup check
+        - config tests
+    - rule: Core is not edited per project, and domain routes enter through one hook
+      why: Core stays compatible with the template. The hook runs after auth and /health and before /mcp, so a domain route cannot shadow /health or be shadowed by /mcp.
+      heldBy:
+        - documented in AGENTS.md
+        - hook order in code
+    - rule: Upload state lives only in S3, and every state change is a conditional write
+      why: Any pod can serve any call, and two pods cannot both process the same upload.
+      heldBy:
+        - If-Match and If-None-Match writes
+        - race tests
+    - rule: Private, link-local and loopback addresses are blocked before any URL is fetched
+      why: The server downloads URLs on behalf of an agent, so it checks the address before it fetches. Content types are also checked against an allow-list and sizes against caps.
+      heldBy:
+        - URL check in code
+        - content-type allow-list
+        - size caps
+  agents: AGENTS.md is the single guidance file, and CLAUDE.md is a symlink to it. Seven skills sit in a tool-neutral folder, with Claude Code reading them through symlinks. Three of them run the release flow, from the stage release to the tag, and only a person can start them.
+connections:
+  - to: auth-service
+    label: verifies tokens from the
+  - to: mcp-template
+    label: was the starting point of the
+  - to: s3
+    label: stores media in an
+  - to: cloudfront
+    label: invalidates the cache of
+  - to: ai-clients
+    label: serves tools to

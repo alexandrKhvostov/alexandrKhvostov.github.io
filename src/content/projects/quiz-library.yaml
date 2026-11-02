@@ -1,0 +1,205 @@
+title: Quiz library
+company: playme
+period: "2026"
+order: 4
+role: Senior Full Stack Developer / Engineering Lead. Responsible for the architecture, the base design and code quality.
+disciplines: [frontend]
+aiAgents: false
+summary: Private React libraries that render quiz funnels and paywalls from validated JSON configs, so a funnel changes without a library release.
+glance:
+  - value: "17"
+    label: quiz step types
+  - value: "15"
+    label: paywall section types
+  - value: about 510
+    label: descriptions written once, next to the schema field
+  - value: "4"
+    label: published packages
+stack:
+  - TypeScript
+  - React 19
+  - Zustand
+  - Zod 4
+  - Radix UI
+  - Tailwind CSS 4
+  - Solidgate
+  - tsup
+  - Vitest
+  - Biome
+  - Changesets
+  - pnpm
+overview:
+  - Quizzes and paywalls used to be built separately in each app. The quiz library is a private monorepo of React packages that render a funnel from a JSON config, a quiz of configurable steps followed by a paywall. One runtime validates the config with Zod and renders it. New copy, reordered steps or personalization is a config change and needs no library release.
+  - The host app owns routes, configs, API calls, analytics and navigation, and passes them in as data providers and callbacks. The library owns step UI and engine logic and never calls a backend itself. Personalization has three parts. Variations swap a whole screen, computed fields such as $pick and $bucket fill one field from earlier answers, and traits carry an answer to the paywall through a function the host supplies.
+  - Four packages are published to a private registry, ui, quiz, paywall and docs. The docs package turns the same Zod schemas into field catalogs and guides, and the quiz builder MCP imports it, so the builder validates with the schemas the renderers use. The Dualio web funnel pins exact versions of quiz and paywall and loads its configs from a CDN.
+diagram:
+  type: pipeline
+  caption: How a JSON config becomes a running quiz, from the host's props to the events it gets back.
+  nodes:
+    - id: host
+      label: Host app
+    - id: validation
+      label: Config validation
+    - id: registry
+      label: Step registries
+    - id: render
+      label: Step rendering
+    - id: events
+      label: Events
+  steps:
+    - from: host
+      to: validation
+      label: Config and providers
+      note: The host passes the plain JSON config to the Quiz component, with a data provider, callbacks and an analytics hook. The config is parsed against a strict schema where the step type selects each step's schema, and an invalid config stores an error and renders nothing.
+    - from: validation
+      to: registry
+      label: Create step stores
+      note: Each step type with state gets a small Zustand store from the registry, kept inside one root store and saved in sessionStorage, so a refresh resumes the quiz. Navigation starts as a history stack holding the first step.
+    - from: registry
+      to: render
+      label: Pick component and layout
+      note: The current step's type selects its component and a default or drawer layout. Variations are merged first, then computed fields are filled from earlier answers, so the component receives plain values and the next step's images are preloaded.
+    - from: render
+      to: events
+      label: Answer and next step
+      note: The step saves its answer and pushes the next step id, taken from the conditional rule that matches the answer or from the default. Pushing null ends the quiz, and going back moves along the history stack.
+    - from: events
+      to: host
+      label: Events to the host
+      note: A small emitter fires quizStart, stepStart, stepFinish and quizFinish, and built-in analytics send quiz_step_view and the sign-up events through the host's track function. The host reads traits from stepFinish and moves on to the paywall named in the config.
+structure:
+  tree: |
+    packages/
+      ui/                         primitives on Radix, Tailwind source entry
+      quiz/src/
+        schema.ts                 config schema, step union built from a registry
+        store.ts                  root store, initStep, navigation, events
+        registries/
+          schemas.ts              step type -> Zod schema
+          components.ts           step type -> React component
+          stores.ts               step type -> store factory
+          step-layouts.ts         step type -> behaviour overrides
+          preloads.ts             step type -> images to fetch early
+        components/
+          QuizStep.tsx            picks the component and the layout
+          steps/SingleChoiceStep/
+            schema.ts             content schema, step schema, docs text
+            SingleChoiceStep.tsx  the component
+            store.ts              answer state
+            layout.ts             continue button behaviour
+            preload.ts            images to preload
+      paywall/src/
+        registries/               schemas.ts, sections.tsx
+        components/sections/HeroBanner/
+                                  schema.ts, renderer, types
+      docs/                       generator and generated catalogs
+      playground/                 step editor with a live phone preview
+      tooling/                    release-coverage CI checker
+    shared/                       resolvable, rich, version engines
+    docs/                         architecture and package guides
+    .changeset/                   Changesets config
+  notes:
+    - path: packages/quiz/src/components/steps/SingleChoiceStep/
+      why: "A step type is one folder, an enum value, and entries in the schema and component registries, plus the store, layout and preload registries when the step needs them. The folder holds the Zod schema, the component and, when the step needs them, a store for its answer, a layout file for button behaviour and a preload file that lists images to fetch early. The schema wraps the step's content schema in a shared helper that adds the type, the content, the navigation logic and the variations. The five registries in registries/ are keyed by the step type enum: schemas (17 entries), components (17), stores (12), layout overrides (11) and preloads (7). The component registry is typed as a record over the enum, so a step type without a component fails the build."
+    - path: packages/quiz/src/schema.ts and store.ts
+      why: The config schema is a discriminated union on the step type, built from the schema registry, so registering a schema makes the type a valid config branch. When the host passes a config, initConfig parses it. An invalid config stores an error and renders nothing. A valid one calls initStep for each step, which builds the step's store from the store registry. Each store can touch only its own slice of the root store, and state saved in sessionStorage is merged back when the saved step has the same type, so a refresh resumes the quiz.
+    - path: packages/quiz/src/components/QuizStep.tsx
+      why: QuizStep reads the current step, takes its component from the component registry and wraps it in a default or drawer layout. Layout settings merge in three levels, the global header first, then the layout in the step's JSON, then the code overrides from the layout registry, which carry behaviour such as the continue button. Inside a step, one hook returns the typed store and schema, with the matching variation and the computed fields already applied. A step finishes by asking its logic for the next step id, a conditional rule that matches the answer or the default, and pushing it. Pushing null ends the quiz. The store emits stepFinish and stepStart events, and built-in analytics turns stepFinish into quiz_step_view.
+    - path: packages/paywall/src/
+      why: A paywall section is a folder with a Zod schema whose type literal names the section, a renderer, a type and an index file. Two registries are keyed by the section type, one for schemas and one for renderers. The renderer registry is a mapped type over all section types, so a missing renderer fails the typecheck. PaywallLayout maps the config's section list to renderers, and overlays such as the checkout drawer, the sticky button, the discount drawer and the footer sit outside that list. Renderers of sections with computed fields start with useResolvedSection, so they work with plain values. A test checks that the section union has one branch for each of the 15 registered section types.
+    - path: packages/ui/
+      why: "The ui package ships 26 primitives and a Tailwind source entry, and no theme values. Quiz and paywall import that entry and add their own, and their components use semantic utilities such as bg-primary and text-muted-foreground. The host sets Tailwind 4, an @theme inline map from color names to CSS variables, the variables under :root and .dark, and a sans font. The card form of the paywall is a third-party iframe that cannot read CSS variables, so its seven colors come from the config or a prop."
+    - path: packages/docs/
+      why: Before every build a generator reads the schema registries through the quiz and paywall schema entries and writes catalogs for 17 step types, 10 static-info sections and 15 paywall sections. It converts each Zod schema to JSON Schema, then walks it into field entries with path, type, required, default and description, plus flags for rich text and computed fields. Three guides, on rich text, computed fields and personalization, are pulled in from the packages that own those engines. The bundle inlines the schema code, so a consumer installs only zod. A test checks that the catalogs contain exactly the registry keys.
+tools:
+  title: Packages
+  intro: Four packages are published to a private registry. Their exports are the public entry points.
+  groups:
+    - title: Published
+      items:
+        - name: ui
+          does: 26 shadcn-style primitives on Radix, a cn helper and a Tailwind source entry. It ships no theme variables, so the host owns the tokens.
+        - name: quiz
+          does: The Quiz component, QuizConfigSchema, validateQuizConfig, resetQuiz and the trait helpers collectQuizTraitKeys and extractStepTraitValue. 17 step types, 10 section types inside the static-info step, 4 data-provider methods.
+        - name: paywall
+          does: The Paywall component, PaywallConfigSchema, validatePaywallConfig and TanStack Query helpers. 15 section types, Solidgate checkout, and a data provider with 3 methods for plans, payment intents and payment status.
+        - name: docs
+          does: Step and section catalogs, the guides, renderCatalog and formatZodError, plus the two config schemas re-exported. It is built for tools that write configs, such as the quiz builder MCP.
+    - title: Private workspace packages
+      note: Not published. The shared ones are inlined into quiz and paywall at build time.
+      items:
+        - name: playground
+          does: A Vite app with a schema-driven step editor, a live phone preview and a theme editor that previews token overrides on the current step.
+        - name: tooling
+          does: The release-coverage checker that runs in CI.
+        - name: shared/resolvable
+          does: The expression engine for computed fields, with 4 node kinds, plus the Zod helpers that declare them.
+        - name: shared/rich
+          does: The rich-text parser for tag markup and {key|fallback} values, with a React provider.
+        - name: shared/version
+          does: The config version check. A different major is an error and a newer minor is a warning.
+decisions:
+  - kind: decision
+    title: One Zod schema per step or section is the source for validation, types, the editor form and the docs
+    why: The schema validates the saved JSON, gives the TypeScript types and the defaults, builds the playground's editor form, and generates the docs and the agent catalogs. Field descriptions are written once with .meta, next to the field. Schemas are strict by default, so a typo in saved JSON fails loudly instead of being dropped. Types such as the step config and the typed store and schema inside a step are derived from the registry values, so a new registry entry changes them everywhere. Registries replace a plugin system.
+  - kind: decision
+    title: Theming belongs to the host
+    why: The packages ship components and a Tailwind source entry, but no theme values. A host sets its own CSS variables and @theme map, so the same packages can carry a different look per product. One host app runs two full palettes, the second scoped to a funnel, with no change to the library. The playground's theme editor previews token overrides and lists only the tokens the current step uses.
+  - kind: decision
+    title: Steps personalise at runtime, from answers
+    why: A variation swaps the content, layout or metadata of a whole step when an earlier answer matches. A resolvable field accepts a literal or a node, and the 4 node kinds are $pick, $count, $weightedSum and $bucket. They read earlier answers in the quiz or traits in the paywall, and the fields exist in 15 quiz schema files and 8 paywall schema files. A step can mark its answer as a trait. The host extracts it on stepFinish and passes a resolveTrait function to the paywall, so the two packages meet only through the paywall id and that function. $pick, $count and $bucket carry a fallback, so a paywall opened without a quiz still renders. Components receive resolved plain values.
+  - kind: decision
+    title: Docs are generated from the schemas
+    why: A generator turns the quiz and paywall Zod schemas into JSON Schema catalogs, 17 step types, 10 static-info sections and 15 paywall sections, with field text from the .meta descriptions. The quiz builder MCP imports the docs package, serves these catalogs to agents and validates with the same Zod objects. So the builder's reference comes from the same schemas as the docs version it installs. Facts about a field live in the schema, and advice on when to use a type lives on the builder side.
+  - kind: decision
+    title: The host owns all I/O
+    why: The library never calls a backend itself. Registration, plans, payment intents, analytics and navigation are injected, and the quiz checks each data-provider result with Zod, so an error or a wrong shape becomes a plain error value. Legal wording belongs to the host as well. The packages ship no router or HTTP client.
+  - kind: decision
+    title: Semver is judged on saved configs
+    why: A stricter schema is a major bump, because configs saved by non-developers must keep validating and meaning the same. Configs carry a version that is checked against the installed package. A different major is an error and a newer minor is a warning. Versions come only from Changesets, which replaced hand-edited numbers in September 2026. The shared engines are inlined into quiz and paywall, and a release-coverage checker in the pull request job requires the consumers and the docs package to be released with them.
+rules:
+  items:
+    - rule: A step type without a component, or a paywall section without a renderer, fails the build
+      why: A missing component or renderer should fail the build, not show up on a visitor's screen.
+      heldBy:
+        - "TypeScript: Record over the step type enum, mapped type over section types"
+        - runtime assertion that a step store matches its step type
+    - rule: Config schemas are strict by default, parsed through a discriminated union
+      why: A typo in saved JSON must fail loudly instead of being silently stripped.
+      heldBy:
+        - Zod strict objects
+        - tests for unknown keys at the root, in content, in nested options and in variation overrides
+        - "convention for nested objects, documented in the package CLAUDE.md"
+    - rule: The docs catalogs list exactly the types the packages register
+      why: Agents and editors read the catalogs, so a registered type must not be missing or extra.
+      heldBy:
+        - test that compares catalog keys with registry keys
+        - test that the paywall section union has one branch per registered section type
+        - test that the docs package re-exports the same config schema objects
+    - rule: Semver is judged on saved config validity and meaning
+      why: Non-developers keep configs saved against older versions, so a stricter schema counts as breaking.
+      heldBy:
+        - documented in docs/SEMVER.md
+        - reviewer judgement
+    - rule: A shared engine change or any quiz or paywall release forces a docs release
+      why: Changesets ignores dev dependency edges, so inlined code would otherwise ship nothing.
+      heldBy:
+        - release-coverage checker with 4 rules
+        - pull request job in the CI workflow
+    - rule: Every pull request that changes a package has a changeset, and versions are never edited by hand
+      why: Version numbers come from one process, so they follow the release plan.
+      heldBy:
+        - changeset status in the pull request workflow
+        - diff check that rejects manual version edits
+    - rule: The public API is the package index, and step stores are not imported from outside their step
+      why: Internals stay free to change, and step state stays scoped to the root store.
+      heldBy:
+        - package exports subpaths
+        - scoped store factories
+        - convention, with review instructions for the code review bot
+  agents: Adding a step type is written down for agents as a checklist in the quiz package's CLAUDE.md, in the architecture doc and in the review rules for the code review bot, and the architecture doc also describes the shape of a paywall section. CLAUDE.md and AGENTS.md at the root and in the main packages hold short quick rules, and the versioning steps an agent follows are at the root. Project skills cover opening pull requests, preparing changesets and mapping Figma tokens to code tokens. The pull request skill drafts the description from the template and opens it through a script. The changeset skill writes a changeset only after confirmation. Both run only when a person starts them, with a narrow list of allowed tools.
+connections:
+  - to: dualio-web
+    label: supplies its quiz and paywall packages to the
+  - to: quiz-builder
+    label: supplies schemas to the
