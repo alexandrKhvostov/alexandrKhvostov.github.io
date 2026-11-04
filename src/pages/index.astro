@@ -4,13 +4,21 @@ import ProjectList from "@/components/sections/ProjectList.astro";
 import { loadProjects } from "@/content/load";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { personJsonLd } from "@/lib/seo";
-import { homeDescription, homeTitle, siteIntro, siteLocation, siteName, siteRole } from "@/lib/site";
+import {
+  homeDescription,
+  homeTitle,
+  llmsTxtPath,
+  siteIntro,
+  siteLocation,
+  siteName,
+  siteRole,
+} from "@/lib/site";
 
 const projects = await loadProjects();
 const person = Astro.site ? personJsonLd(Astro.site.href) : undefined;
 ---
 
-<BaseLayout title={homeTitle} description={homeDescription} jsonLd={person}>
+<BaseLayout title={homeTitle} description={homeDescription} jsonLd={person} markdownPath={llmsTxtPath}>
   <div class="flex flex-col gap-section pt-7 pb-section">
     <div class="flex flex-col gap-5">
       <div class="flex flex-col gap-3">

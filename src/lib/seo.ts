@@ -2,7 +2,7 @@
  * Search-engine data built from site and project facts: schema.org JSON-LD and the sitemap. Absolute URLs
  * come in from the caller (Astro.site), so this module stays pure.
  */
-import { contactLinks, siteCity, siteCountry, siteName, siteRole } from "./site.ts";
+import { contactLinks, siteCity, siteCountry, siteIntro, siteName, siteRole, siteSkills } from "./site.ts";
 
 type JsonLd = Record<string, unknown>;
 
@@ -15,6 +15,8 @@ export function personJsonLd(siteUrl: string): JsonLd {
     "@id": `${siteUrl}#person`,
     name: siteName,
     jobTitle: siteRole,
+    description: siteIntro,
+    knowsAbout: [...siteSkills],
     url: siteUrl,
     ...(email ? { email } : {}),
     address: { "@type": "PostalAddress", addressLocality: siteCity, addressCountry: siteCountry },

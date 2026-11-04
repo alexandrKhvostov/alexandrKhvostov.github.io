@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { contactLinks, homePath, pageTitle, projectOgImagePath, projectPath, siteName } from "./site.ts";
+import {
+  contactLinks,
+  homePath,
+  llmsTxtPath,
+  pageTitle,
+  projectMarkdownPath,
+  projectOgImagePath,
+  projectPath,
+  siteName,
+  siteSkills,
+} from "./site.ts";
 
 test("pageTitle appends the site name", () => {
   assert.equal(pageTitle("Auth service"), "Auth service | Alexandr Khvostov");
@@ -26,4 +36,17 @@ test("every contact link is mailto or https", () => {
 
 test("projectOgImagePath points into public/og", () => {
   assert.equal(projectOgImagePath("auth-service"), "/og/auth-service.jpg");
+});
+
+test("projectMarkdownPath is the project slug with .md", () => {
+  assert.equal(projectMarkdownPath("auth-service"), "/auth-service.md");
+});
+
+test("llmsTxtPath is a root file", () => {
+  assert.equal(llmsTxtPath, "/llms.txt");
+});
+
+test("siteSkills lists the stack the intro states", () => {
+  assert.ok(siteSkills.includes("TypeScript"));
+  assert.ok(siteSkills.includes("AI agents"));
 });

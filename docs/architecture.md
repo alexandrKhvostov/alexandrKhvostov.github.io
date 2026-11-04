@@ -11,7 +11,7 @@ src/
     load.ts         loadProjects(): the collection as plain objects, checked against the node registry
   content.config.ts the Zod schema of the projects collection (source of truth for fields)
   lib/              pure TypeScript, unit-tested: types, node registry, grouping, filters, connections,
-                    diagram layout maths, text wrapping, list folding, SEO data (JSON-LD, sitemap),
+                    diagram layout maths, text wrapping, list folding, SEO data (JSON-LD, sitemap), plain-text versions for agents (llms.txt, project Markdown),
                     site constants and contacts, fixtures for tests and /lab
   components/
     ui/             primitives: Button, Badge, Chip, Link, ThemeSwitch
@@ -21,7 +21,7 @@ src/
     sections/       ProjectList, ProjectHeader, ProjectOverview, ProjectArchitecture, ProjectShowcase, ProjectStructure,
                     ProjectTools, ProjectDecisions, ProjectRules, ProjectConnections, SiteFooter: composed from blocks
   layouts/          BaseLayout (head, meta, JSON-LD, top bar, footer, theme bootstrap), ProjectLayout (contents column, sections)
-  pages/            index (all projects), [slug] (one project), 404, sitemap.xml, _lab (dev only)
+  pages/            index (all projects), [slug] (one project), 404, sitemap.xml, llms.txt, [slug].md (one project as Markdown), _lab (dev only)
   scripts/          client-side behaviour: filters, diagram, reveal, anchors, theme, lab
   styles/           tokens, themes, tailwind.css, fonts.css, diagram.css (see DESIGN.md)
 public/             favicon.ico, app icons, site.webmanifest, robots.txt, og.jpg (home link preview),
@@ -84,7 +84,8 @@ The full system map, a graph of every node and connection, is a later step. For 
 - `/[slug]`: one page per project from `ProjectLayout`, at a short root URL meant to be shared on its own (`/auth-service/`). Sections run Overview, Architecture, Showcase, Code structure, Tools, Decision log, Rules and agents, Connected projects; the optional ones appear only when the project has the field, and the contents column follows. A sticky contents column sits on the left from 900px up; prose is 68ch and diagrams use the full content width. The bottom of the page links back to all projects and on to the next one.
 - `/404`: GitHub Pages serves it for any unknown path; kept out of search results.
 - `/sitemap.xml`: the home page and every project page, built from the collection.
-- Every page has a footer with the contacts (`#contact`, linked from the top bar). The head carries Open Graph tags with a 1200x630 preview: `og.jpg` on the home page, `og/<slug>.jpg` on a project page. The home page adds schema.org `Person` JSON-LD and each project page a `TechArticle` written by that person (`lib/seo.ts`).
+- `/llms.txt` and `/<slug>.md`: plain-text versions for AI agents, written by `lib/llms.ts` from the same data as the pages (no separate copy). `llms.txt` follows the llms.txt convention: name, role, intro, contacts, then every project under its company group with a link to its `.md`. A `.md` file holds one project: frontmatter, summary, facts, overview, the diagram as numbered steps, the optional sections the project has, the decision log, and connections (outgoing and incoming) with links to the targets' `.md` files. Each HTML page links its text version with `<link rel="alternate">`.
+- Every page has a footer with the contacts (`#contact`, linked from the top bar). The head carries Open Graph tags with a 1200x630 preview: `og.jpg` on the home page, `og/<slug>.jpg` on a project page. The home page adds schema.org `Person` JSON-LD (with the intro as `description` and the skills as `knowsAbout`) and each project page a `TechArticle` written by that person (`lib/seo.ts`).
 - The icons and previews in `public/` are compressed images made from the developer's originals, which stay in `research/images/` with the scripts that render them. A changed project title or summary means rendering its preview again.
 - `/lab`: every token and component in every state, a theme switcher and live token inputs, built from invented data in `lib/fixtures.ts`. Never linked. The file is `src/pages/_lab.astro` (the underscore keeps the router from building it) and a small integration in `astro.config.mjs` injects the `/lab` route only under `astro dev`, so a build contains neither the page nor its script.
 

@@ -28,6 +28,8 @@ interface Props {
   imageAlt?: string;
   /** schema.org data for search engines, written as JSON-LD. */
   jsonLd?: Record<string, unknown>;
+  /** Path of the plain-text version of this page for AI agents (a project's .md, or /llms.txt). */
+  markdownPath?: string;
 }
 
 const {
@@ -38,10 +40,13 @@ const {
   image = ogImagePath,
   imageAlt = ogImageAlt,
   jsonLd,
+  markdownPath,
 } = Astro.props;
 
 const themeIds = themes.map((theme) => theme.id);
 const canonical = noindex || !Astro.site ? undefined : new URL(Astro.url.pathname, Astro.site).href;
+const markdownHref = markdownPath && Astro.site ? new URL(markdownPath, Astro.site).href : undefined;
+const markdownType = markdownPath?.endsWith(".md") ? "text/markdown" : "text/plain";
 const ogImage = Astro.site ? new URL(image, Astro.site).href : undefined;
 const current = Astro.url.pathname === homePath ? "page" : undefined;
 ---
@@ -70,6 +75,7 @@ const current = Astro.url.pathname === homePath ? "page" : undefined;
     <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
+    {markdownHref && <link rel="alternate" type={markdownType} href={markdownHref} />}
     {jsonLd && <script type="application/ld+json" is:inline set:html={serializeJsonLd(jsonLd)} />}
     <script
       is:inline
