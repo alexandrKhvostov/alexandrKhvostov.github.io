@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { personJsonLd, projectJsonLd, serializeJsonLd, sitemapXml } from "./seo.ts";
-import { siteName } from "./site.ts";
+import { siteIntro, siteName, siteSkills } from "./site.ts";
 
 const site = "https://example.test/";
 
@@ -10,6 +10,8 @@ test("personJsonLd names the owner and links only https profiles in sameAs", () 
   assert.equal(person["@type"], "Person");
   assert.equal(person.name, siteName);
   assert.equal(person["@id"], "https://example.test/#person");
+  assert.equal(person.description, siteIntro);
+  assert.deepEqual(person.knowsAbout, [...siteSkills]);
   for (const url of person.sameAs as string[]) assert.match(url, /^https:\/\//);
 });
 
